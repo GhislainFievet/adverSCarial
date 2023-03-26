@@ -1,0 +1,25 @@
+Package: adverSCarial
+Title: What the Package Does (One Line, Title Case)
+Version: 0.99.0
+Authors@R: 
+    person("Ghislain", "FIEVET", , "ghislain.fievet@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-0337-7327"))
+Description:
+    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    classifiers to adversarial attacks. The package is versatile and provides a format for integrating
+    any type of classifier. It offers functions for studying and generating two types of attacks,
+    min change attack and max change attack. The min change attack involves making a small modification
+    to the input to alter the classification. The max change attack involves making a large modification
+    to the input without changing its classification.
+    The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
+    against adversarial attacks.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+biocViews: Software, SingleCell, Transcriptomics,
+Suggests: knitr, RUnit, BiocGenerics, TENxPBMCData
+Imports: gtools, stringr, randomForest
+VignetteBuilder: knitr
+Author: Ghislain FIEVET <ghislain.fievet@gmail.com>
+Maintainer: Ghislain FIEVET <ghislain.fievet@gmail.com>
