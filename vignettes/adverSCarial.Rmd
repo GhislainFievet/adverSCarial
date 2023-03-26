@@ -145,6 +145,7 @@ de Kanter JK, Lijnzaad P, Candelli T, Margaritis T, Holstege FCP (2019). “CHET
 
 ```{r load chetah, echo=FALSE, message=FALSE}
 library(CHETAH)
+library(Seurat)
 ```
 
 First let's load a `train` and a `test` dataset.
