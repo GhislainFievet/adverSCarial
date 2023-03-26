@@ -47,7 +47,15 @@ Grid search of min change adversarial attack. Tries each
 combination on a cluster, given a list of genes and a list of modifications.
 }
 \examples{
-advGridMinChange(rna_expression, clusters_id, "Memory CD4+",
-myClassifier, genes=c("CD4","CD8","IL2A","IL2B"),
+MyClassifier <- function(expr, clusters, target) {
+   c("T cell", 0.9)
+}
+rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3))
+genes <- c("CD4", "CD8A")
+clusters_id <- c("B cell","B cell","T cell","T cell")
+
+advGridMinChange(rna_expression, clusters_id, "T cell",
+MyClassifier, genes=genes,
 modifications = list(list("perc1"), list("perc99")))
 }

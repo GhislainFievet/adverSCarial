@@ -19,7 +19,7 @@
 #'
 #' @export
 RFClassifier <- function(expr, clusters, target) {
-    set.seed(20)
+    requireNamespace("randomForest")
     colnames(expr) <- stringr::str_replace_all(colnames(expr), "-", "_")
     colnames(expr) <- stringr::str_replace(colnames(expr), "^", "g_")
 
@@ -36,10 +36,11 @@ RFClassifier <- function(expr, clusters, target) {
     final_predictions <- predict(
                     rf_scrnaseq, expr[clusters == target, ])
     ratio <- as.numeric(sort(table(final_predictions),
-        decreasing = T
+        decreasing = TRUE
     )[1]) /
-        sum(as.numeric(sort(table(final_predictions), decreasing = T)))
-    predicted_class <- names(sort(table(final_predictions), decreasing = T)[1])
+        sum(as.numeric(sort(table(final_predictions), decreasing = TRUE)))
+    predicted_class <- names(sort(table(final_predictions),
+        decreasing = TRUE)[1])
     if (ratio < 0.5) {
         predicted_class <- "NA"
     }
@@ -80,7 +81,6 @@ matrixFromSCE <- function(sce) {
     )
     df <- data.frame(sce@assays@data$counts)
     df <- df[ind2keep, ]
-    #rownames(df) <- sce@ rowRanges@ elementMetadata@listData$Symbol_TENx[ind2keep]
     rownames(df) <- sce@ rowRanges@ elementMetadata@listData$Symbol[ind2keep]
     colnames(df) <- colData(sce)$Barcode
     t(df)

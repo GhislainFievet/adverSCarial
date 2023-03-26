@@ -50,6 +50,14 @@ RNA expression matrix, for given genes, for a given cluster,
 for a given modification.
 }
 \examples{
-predictWithNewValue(rna_expression, c("CD4", "CD8"), clusters_id,
-"Memory CD4+", myClassifier, adv_method="perc99")
+MyClassifier <- function(expr, clusters, target) {
+   c("T cell", 0.9)
+}
+rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3))
+genes <- c("CD4", "CD8A")
+clusters_id <- c("B cell","B cell","T cell","T cell")
+
+predictWithNewValue(rna_expression, genes, clusters_id,
+"T cell", MyClassifier, adv_method="perc99")
 }

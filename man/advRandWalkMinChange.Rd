@@ -62,13 +62,21 @@ Step 2 is to perform a random walk search to reduce the number of genes
 needed to change the classification."
 }
 \examples{
-advRandWalkMinChange(rna_expression, clusters_id, "Memory CD4+",
-myClassifier, genes=c("CD4","CD8","IL2A","IL2B"),
+MyClassifier <- function(expr, clusters, target) {
+   c("T cell", 0.9)
+}
+rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3))
+genes <- c("CD4", "CD8A")
+clusters_id <- c("B cell","B cell","T cell","T cell")
+
+advRandWalkMinChange(rna_expression, clusters_id, "T cell",
+MyClassifier, genes=genes,
 modifications = list(list("perc1"), list("perc99")))
 
 # Stop at first attack discovery, whitout going into the walk
 # parameter search.
-advRandWalkMinChange(rna_expression, clusters_id, "Memory CD4+",
-myClassifier, genes=c("CD4","CD8","IL2A","IL2B"),
+advRandWalkMinChange(rna_expression, clusters_id, "T cell",
+MyClassifier, genes=genes,
 modifications = list(list("perc1"), list("perc99")), walk_length=0)
 }

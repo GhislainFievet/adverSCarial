@@ -11,7 +11,7 @@ output:
         toc_depth: 2
 vignette: >
   %\VignetteIndexEntry{adverSCarial}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{knitr::knitr}
   %\VignetteEncoding{UTF-8}
 ---
 
@@ -78,7 +78,7 @@ We can specify the `change_type = "not_na"` argument to indicate that we want th
 ```{r search min change attack, message=FALSE}
 adv_min_change = advMinChange(mat_pbmc, cell_types, "DC",
                         RFClassifier, excl_genes = markers, adv_method = "perc99",
-                        return_first_found = T, change_type = "not_na",
+                        return_first_found = TRUE, change_type = "not_na",
                         first_dichot = 10)
 print(adv_min_change)
 ```
@@ -220,9 +220,9 @@ CHETAHClassifier = function(expr, clusters, target){
     input <- CHETAHclassifier(input = input, ref_cells = reference_3k)
     input <- Classify(input = input, 0.01)
     final_predictions = input$celltype_CHETAH[clusters == target]
-    ratio <- as.numeric(sort(table(final_predictions), decreasing = T)[1]) /
-        sum(as.numeric(sort(table(final_predictions), decreasing = T)))
-    predicted_class <- names(sort(table(final_predictions), decreasing = T)[1])
+    ratio <- as.numeric(sort(table(final_predictions), decreasing = TRUE)[1]) /
+        sum(as.numeric(sort(table(final_predictions), decreasing = TRUE)))
+    predicted_class <- names(sort(table(final_predictions), decreasing = TRUE)[1])
     if ( ratio < 0.3){
         predicted_class <- "NA"
     }
@@ -235,7 +235,7 @@ You can now test `CHETAH` classifier with `adverSCarial` tools.
 Let's run a `maxChangeAttack`.
 
 ```{r chetah max change attack}
-res_max_change = advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier,adv_method="perc99", max_split_size = 100, verbose=T)
+res_max_change = advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier,adv_method="perc99", max_split_size = 1000)
 res_max_change
 ```
 
@@ -324,12 +324,16 @@ modifications[[2]] <- list("perc99")
 
 We run the `min change overview`, this gives us a general idea of which cell types are more vulnerable to min change attacks.
 ```{r run min change overview}
-min_change_overview <- minChangeOverview(mat_pbmc, cell_types, CHETAHClassifier, modifications= modifications)
+min_change_overview <- minChangeOverview(mat_pbmc, cell_types, CHETAHClassifier, modifications= modifications, max_split_size = 1000)
 min_change_overview
 ```
 
 And the `max change overview`, giving us a general idea of which cell types are more vulnerable to max change attacks.
 ```{r run max change overview}
-max_change_overview <- maxChangeOverview(mat_pbmc, cell_types, CHETAHClassifier, modifications= modifications)
+max_change_overview <- maxChangeOverview(mat_pbmc, cell_types, CHETAHClassifier, modifications= modifications, max_split_size = 1000)
 max_change_overview
+```
+
+```{r session info}
+sessionInfo()
 ```

@@ -65,6 +65,14 @@ approximation is to determine which clusters are most
 susceptible to max change adversarial attacks.
 }
 \examples{
+MyClassifier <- function(expr, clusters, target) {
+   c("T cell", 0.9)
+}
+rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3))
+genes <- c("CD4", "CD8A")
+clusters_id <- c("B cell","B cell","T cell","T cell")
+
 maxChangeOverview(rna_expression, clusters_id,
-myClassifier, modifications = list(list("perc1"), list("perc99")))
+MyClassifier, modifications = list(list("perc1"), list("perc99")))
 }

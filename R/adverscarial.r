@@ -16,8 +16,13 @@
 #' @return the matrix or a dataframe exprs modified on asked genes
 #' with the specified modification
 #' @examples
-#' advModifications(rna_expression, c("CD4", "CD8"), clusters_id,
-#' "Memory CD4+", adv_method="perc99")
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#'
+#' advModifications(rna_expression, genes, clusters_id,
+#' "T cell", adv_method="perc99")
 #' @export
 advModifications <- function(exprs, genes, clusters,
                             target, adv_method = "perc99",
@@ -140,8 +145,16 @@ advModifications <- function(exprs, genes, clusters,
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a vector of the classification, and the associated odd
 #' @examples
-#' predictWithNewValue(rna_expression, c("CD4", "CD8"), clusters_id,
-#' "Memory CD4+", myClassifier, adv_method="perc99")
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#'
+#' predictWithNewValue(rna_expression, genes, clusters_id,
+#' "T cell", MyClassifier, adv_method="perc99")
 #' @export
 predictWithNewValue <- function(exprs, genes, clusters, target,
                                 classifier, adv_method = "perc99",
@@ -181,8 +194,16 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
 #' @return a list of genes you can modify on a cluster without
 #' modifying its classification
 #' @examples
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#' 
 #' advMaxChange(rna_expression, clusters_id,
-#' "Memory CD4+", myClassifier, adv_method="perc99")
+#' "T cell", MyClassifier, adv_method="perc99")
 #' @export
 advMaxChange <- function(exprs, clusters, target, classifier,
                         excl_genes = c(), genes = c(), adv_method = "perc99",
@@ -358,8 +379,16 @@ advMaxChange <- function(exprs, clusters, target, classifier,
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a list of genes/new classification tuples
 #' @examples
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#' 
 #' advMinChange(rna_expression, clusters_id,
-#' "Memory CD4+", myClassifier, adv_method="perc99")
+#' "T cell", MyClassifier, adv_method="perc99")
 #' @export
 advMinChange <- function(exprs, clusters, target, classifier, excl_genes = c(),
         genes = c(), adv_method = "perc99", adv_fixed_value = 3,
@@ -587,8 +616,16 @@ advMinChange <- function(exprs, clusters, target, classifier, excl_genes = c(),
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a list of genes/new classification tuples
 #' @examples
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#'
 #' maxChangeOverview(rna_expression, clusters_id,
-#' myClassifier, modifications = list(list("perc1"), list("perc99")))
+#' MyClassifier, modifications = list(list("perc1"), list("perc99")))
 #' @export
 maxChangeOverview <- function(exprs, clusters, classifier, excl_genes = c(),
                             genes = c(),
@@ -730,8 +767,16 @@ maxChangeOverview <- function(exprs, clusters, classifier, excl_genes = c(),
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a list of genes/new classification tuples
 #' @examples
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#'
 #' minChangeOverview(rna_expression, clusters_id,
-#' myClassifier, modifications = list(list("perc1"), list("perc99")))
+#' MyClassifier, modifications = list(list("perc1"), list("perc99")))
 #' @export
 minChangeOverview <- function(exprs, clusters, classifier, excl_genes = c(),
             genes = c(), modifications = list(list("perc1"), list("perc99")),
@@ -758,7 +803,8 @@ minChangeOverview <- function(exprs, clusters, classifier, excl_genes = c(),
         message("You should lower the number of genes and/or",
             " of modifications. For example 5 genes and 2 modifications",
             " gives 243 combinations to test")
-        message("You can use the iamsure=T option to run the function anyway.")
+        message("You can use the iamsure=TRUE option",
+            "to run the function anyway.")
         return(TRUE)
     } else {
         return (FALSE)
@@ -782,8 +828,16 @@ minChangeOverview <- function(exprs, clusters, classifier, excl_genes = c(),
 #' when `genes` list is too long, set to `TRUE` to run anyway.
 #' @return dataframe results of the classification of all the grid combinations
 #' @examples
-#' advGridMinChange(rna_expression, clusters_id, "Memory CD4+",
-#' myClassifier, genes=c("CD4","CD8","IL2A","IL2B"),
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#' 
+#' advGridMinChange(rna_expression, clusters_id, "T cell",
+#' MyClassifier, genes=genes,
 #' modifications = list(list("perc1"), list("perc99")))
 #' @export
 advGridMinChange <- function(exprs, clusters, target, classifier,
@@ -1007,10 +1061,11 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
                     class_results[1], class_results[2])
         results <- rbind(results, row_results)
         results_int <- rbind(results_int, row_results_int)
-        # colnames(results) <- c(genes, "prediction", "odd")
-        colnames(results) <- c(genes)
-        #colnames(results_int) <- c(genes, "prediction", "odd")
-        colnames(results_int) <- c(genes)
+        colnames(results) <- c(genes, "prediction", "odd")
+        #colnames(results) <- c(genes)
+        colnames(results_int) <- c(genes, "prediction", "odd")
+        #colnames(results_int) <- c(genes)
+
         if (class_results[1] == target) {
             i <- i + 1
         } else {
@@ -1082,14 +1137,22 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return dataframe results of the classification of all the grid combinations
 #' @examples
-#' advRandWalkMinChange(rna_expression, clusters_id, "Memory CD4+",
-#' myClassifier, genes=c("CD4","CD8","IL2A","IL2B"),
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#'
+#' advRandWalkMinChange(rna_expression, clusters_id, "T cell",
+#' MyClassifier, genes=genes,
 #' modifications = list(list("perc1"), list("perc99")))
 #'
 #' # Stop at first attack discovery, whitout going into the walk
 #' # parameter search.
-#' advRandWalkMinChange(rna_expression, clusters_id, "Memory CD4+",
-#' myClassifier, genes=c("CD4","CD8","IL2A","IL2B"),
+#' advRandWalkMinChange(rna_expression, clusters_id, "T cell",
+#' MyClassifier, genes=genes,
 #' modifications = list(list("perc1"), list("perc99")), walk_length=0)
 #' @export
 advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
@@ -1131,9 +1194,4 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     function_results <- function_results[order(
             function_results$type_modified, decreasing = TRUE), ]
     function_results
-}
-
-#' @export
-todel <- function(a, b) {
-    a + b
 }

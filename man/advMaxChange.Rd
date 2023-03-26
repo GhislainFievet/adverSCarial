@@ -58,6 +58,14 @@ list of genes you can modify on a cluster without changing its
 classification.
 }
 \examples{
+MyClassifier <- function(expr, clusters, target) {
+   c("T cell", 0.9)
+}
+rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3))
+genes <- c("CD4", "CD8A")
+clusters_id <- c("B cell","B cell","T cell","T cell")
+
 advMaxChange(rna_expression, clusters_id,
-"Memory CD4+", myClassifier, adv_method="perc99")
+"T cell", MyClassifier, adv_method="perc99")
 }
