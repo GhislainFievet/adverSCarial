@@ -19,7 +19,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 biocViews: Software, SingleCell, Transcriptomics, Classification
-Suggests: knitr, RUnit, BiocGenerics, TENxPBMCData
+Suggests: knitr, RUnit, BiocGenerics, TENxPBMCData, CHETAH, Seurat
 Imports: gtools, stringr, randomForest
 VignetteBuilder: knitr
 Author: Ghislain FIEVET <ghislain.fievet@gmail.com>

@@ -41,7 +41,7 @@ There are two types of adversarial attacks: `min change attack` which modifies s
 
 Load libraries
 
-```{r load libraries, message=FALSE}
+```{r load libraries, warning = FALSE, message=FALSE}
 library(adverSCarial)
 library(TENxPBMCData)
 library(randomForest)
@@ -49,7 +49,7 @@ library(randomForest)
 
 Load a pbmc SingleCellExperiment and its cell type classification.
 
-```{r min change attack, message=FALSE}
+```{r min change attack, message=FALSE, warning = FALSE, cache = TRUE}
 pbmc <- TENxPBMCData(dataset = "pbmc3k")
 mat_pbmc <- matrixFromSCE(pbmc)
 
@@ -59,8 +59,11 @@ cell_types <- read.table(cell_types, sep="\t")$cell_type
 
 The package contains a random forest based classifier working on the pbmc3k dataset: `RFClassifier`. We verify it is classifying properly.
 
-```{r first classif}
-RFClassifier(mat_pbmc, cell_types, "DC")
+```{r first classif, message=FALSE}
+res_classif <- RFClassifier(mat_pbmc, cell_types, "DC")
+```
+```{r first classif bis}
+res_classif
 ```
 
 We want to run attacks on the "DC" cluster but without modifying the genes used by human to make manual classification. We can find this list on [Seurat documentation](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html)
@@ -83,12 +86,14 @@ Computation times can be lengthy, we use the `return_first_found` argument to re
 
 We can specify the `change_type = "not_na"` argument to indicate that we want the attack to misclassify the cluster as an existing cell type, rather than as NA.
 
-```{r search min change attack, message=FALSE}
+```{r search min change attack, message=FALSE, cache = TRUE, warning = FALSE}
 adv_min_change = advMinChange(mat_pbmc, cell_types, "DC",
                         RFClassifier, excl_genes = markers, adv_method = "perc99",
                         return_first_found = TRUE, change_type = "not_na",
                         first_dichot = 10)
-print(adv_min_change)
+```
+```{r search min change attack bis, cache = TRUE, warning = FALSE}
+adv_min_change
 ```
 
 The function found that modifying the single gene `names(adv_min_change)[1]` with the `perc99` modification on the cluster leads to a new classification, `adv_min_change[[1]][1]`.
@@ -97,15 +102,17 @@ Let's run this attack and verify if it is successful.
 
 First we modify the `mat_pbmc` matrix on the target cluster.
 
-```{r run min change attack, echo=FALSE, message=FALSE}
-mat_adver = advModifications(mat_pbmc, names(adv_min_change)[1], cell_types, "DC")
+```{r run min change attack, message=FALSE, cache = TRUE, warning = FALSE}
+mat_adver <- advModifications(mat_pbmc, names(adv_min_change)[1], cell_types, "DC")
 ```
 
 Then classify the "DC" cluster with `RFClassifier`.
-```{r verify the min change attack}
-RFClassifier(mat_adver, cell_types, "DC")
+```{r verify the min change attack, cache = TRUE, warning = FALSE, message = FALSE}
+rf_result <- RFClassifier(mat_adver, cell_types, "DC")
 ```
-
+```{r verify the min change attack bis, cache = TRUE, warning = FALSE}
+rf_result
+```
 
 ## Max change attack
 
@@ -115,11 +122,14 @@ The function `advMaxChange` runs a dichotomic search of gene subsets, given the 
 
 The `max_split_size` argument is the maximum size of dichotomic slices. Set to 1 to have better results, but it will take longer to compute.
 
-```{r search max change attack}
-adv_max_change = advMaxChange(mat_pbmc, cell_types, "DC", RFClassifier,
+```{r search max change attack, cache = TRUE, warning = FALSE, message=FALSE}
+adv_max_change <- advMaxChange(mat_pbmc, cell_types, "DC", RFClassifier,
                     excl_genes = markers, max_split_size = 1000, adv_method = "perc99")
-print(dim(adv_max_change))
 ```
+```{r search max change attack bis, cache = TRUE, warning = FALSE}
+dim(adv_max_change)
+```
+
 
 The function found `length(adv_max_change)` genes that you can modify with the `perc99` modification, and the cluster is still classified as `DC`.
 
@@ -127,15 +137,17 @@ Let's run this attack and verify if it is successful.
 
 First we modify the `mat_pbmc` matrix on the target cluster, on the genes previously determined.
 
-```{r run max change attack, echo=FALSE, message=FALSE}
-mat_max_adver = advModifications(mat_pbmc, adv_max_change, cell_types, "DC")
+```{r run max change attack, message=FALSE, cache = TRUE, warning=FALSE}
+mat_max_adver <- advModifications(mat_pbmc, adv_max_change, cell_types, "DC")
 ```
 
 Then we verify that classification is still `DC`.
-```{r verify max change attack}
-RFClassifier(mat_adver, cell_types, "DC")
+```{r verify max change attack, warning = FALSE, cache = TRUE, message=FALSE}
+res_classif <- RFClassifier(mat_adver, cell_types, "DC")
 ```
-
+```{r verify max change attack bis, warning = FALSE, cache = TRUE}
+res_classif
+```
 
 # Prepare a classifier with `CHETAH`
 
@@ -143,14 +155,14 @@ Here we demonstrate how to implement a classifier, and take the example of `CHET
 
 de Kanter JK, Lijnzaad P, Candelli T, Margaritis T, Holstege FCP (2019). “CHETAH: a selective, hierarchical cell type identification method for single-cell RNA sequencing.” Nucleic Acids Research. ISSN 0305-1048, doi: 10.1093/nar/gkz543.
 
-```{r load chetah, echo=FALSE, message=FALSE}
+```{r load chetah, message=FALSE, warning=FALSE }
 library(CHETAH)
 library(Seurat)
 ```
 
 First let's load a `train` and a `test` dataset.
 
-```{r load train and test, echo=FALSE, message=FALSE}
+```{r load train and test, message=FALSE, warning = FALSE, cache = TRUE}
 # Load scRNA-seq datasets
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
@@ -163,7 +175,7 @@ colData(train_3k)$celltypes <- cell_types_3k$cell_type[!is.na(cell_types_3k$cell
 
 Then we convert the `test` dataset into a `Seurat` object for visualization purpose.
 
-```{r test chetah seurat object, echo=FALSE, message=FALSE}
+```{r test chetah seurat object, message=FALSE, warning = FALSE, cache = TRUE}
 counts4seurat <- t(matrixFromSCE(test_4k))
 pbmc <- CreateSeuratObject(counts = counts4seurat, project = "pbmc4k", min.cells = 3, min.features = 200)
 # Filter, normalize and find features
@@ -182,7 +194,7 @@ pbmc <- RunUMAP(pbmc, dims = 1:10)
 
 We annotate cells with `CHETAH`.
 
-```{r annotate with CHETAH, echo=FALSE, message=FALSE}
+```{r annotate with CHETAH, message=FALSE, warning = FALSE, cache = TRUE}
 # Anotation with CHETAH
 reference_3k <<- sceConvertToHGNC(train_3k)
 input <- SingleCellExperiment(assays = list(counts = as.matrix(pbmc@assays$RNA@counts)))
@@ -194,14 +206,14 @@ Idents(pbmc) <- 'chetah_classification'
 
 And visualize the results
 
-```{r chetah markers}
+```{r chetah markers, warning = FALSE, cache = TRUE}
 # Known markers for each cell type
 markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
 DotPlot(pbmc, features=markers)
 ```
 
-```{r chetah dimplot}
+```{r chetah dimplot, warning = FALSE, cache = TRUE}
 DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5)
 ```
 
@@ -220,8 +232,8 @@ A classifier function has to be formated as follow to be used with *adverSCarial
 The matrix `expr` contains RNA expression values, the list `clusters` consists of the cluster IDs for each cell in `expr`, and `target` is the ID of the cluster for which we want to have a classification. The function returns a vector with the classification result, and a trust indice.
 
 This is how you can adapt `CHETAH` for `adverSCarial`.
-```{r chetah adapt classifier}
-CHETAHClassifier = function(expr, clusters, target){
+```{r chetah adapt classifier, warning = FALSE, cache = TRUE, message=FALSE}
+CHETAHClassifier <- function(expr, clusters, target){
     if (!exists("reference_3k")) {
         reference_3k <<- train_3k
     }
@@ -243,105 +255,29 @@ You can now test `CHETAH` classifier with `adverSCarial` tools.
 
 Let's run a `maxChangeAttack`.
 
-```{r chetah max change attack}
-res_max_change = advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier,adv_method="perc99", max_split_size = 1000)
-res_max_change
+```{r chetah max change attack, warning = FALSE, cache = TRUE, message=FALSE}
+rna_matrix <- t(as.matrix(pbmc@assays$RNA@counts))
+clusters_id <- pbmc@meta.data[['chetah_classification']]
+adv_max_change <- advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier,adv_method="perc99", max_split_size = 1000)
 ```
+
 
 Let's run this attack and verify if it is successful.
 
 First we modify the `mat_pbmc` matrix on the target cluster, on the genes previously determined.
 
-```{r chetah run max change attack, echo=FALSE, message=FALSE}
-mat_max_adver = advModifications(mat_pbmc, adv_max_change, cell_types, "DC")
+```{r chetah run max change attack, message=FALSE, warning = FALSE, cache = TRUE}
+mat_max_adver <- advModifications(rna_matrix, adv_max_change, clusters_id, "DC")
 ```
 
 Then we verify that classification is still `DC`.
-```{r chetah verify max change attack}
-RFClassifier(mat_adver, cell_types, "DC")
+```{r chetah verify max change attack, warning = FALSE, cache = TRUE, message=FALSE}
+rf_result <- RFClassifier(mat_max_adver, clusters_id, "DC")
+```
+```{r chetah verify max change attack bis, warning = FALSE, cache = TRUE}
+rf_result
 ```
 
-# Advanced attacks with `advRandWalkMinChange`
-
-The `CHETAH` classifier is not vulenrable to one gene attack on `DC`cluster. So we can use the `advRandWalkMinChange` function to generate more complex attacks, still looking for a minimum change in the input.
-
-First step is to look for a list o genes suscpetibles to move the classification. We get this list by using `findMarkers` function from `Seurat`.
-
-```{r find markers}
-seurat_markers <- FindMarkers(pbmc, ident.1 = "DC", ident.2="CD14+ Mono")
-genes_4walk <- rownames(seurat_markers[abs(seurat_markers$avg_log2FC)>1,])
-# Remove the officiel markers from the candidates
-genes_4walk <- genes_4walk[!genes_4walk %in% markers]
-genes_4walk
-```
-
-Then we define a list of modifications to test:
-```{r list of modifications}
-modifications <- list()
-modifications[[1]] <- list("perc1")
-modifications[[2]] <- list("perc99")
-```
-
-Then we process to a random walk parameter search on these genes and these modifications:
-```{r run advRandWalkMinChange}
-rand_walk_min_change <- advRandWalkMinChange(mat_pbmc, cell_types, "DC", CHETAHClassifier, genes=genes_4walk, modifications=modifications, walk_length=100)
-head(rand_walk_min_change)
-```
-
-The first line of `rand_walk_min_change` contains the parameter for the attack:
-```{r display attack vector}
-best_results <- rand_walk_min_change_attacks[1,]
-best_results <- best_results[6:ncol(best_results)]
-best_results <- best_results[,best_results!="NA"]
-best_results
-```
-
-Then we modify the rna expression matrix to fool the classifier:
-```{r rand walk modify mat}
-min_change_attack_rna_matrix <- mat_pbmc
-for ( i in seq_len(length(colnames(best_results)))){
-    gene2modif <- colnames(best_results)[i]
-    modif <- best_results[1,i]
-    min_change_attack_rna_matrix <- advModifications(min_change_attack_rna_matrix,
-        gene2modif, cell_types, "DC", adv_method=modif)
-}
-```
-
-And we check it successfully changed the classification.
-```{r check rand walk classif}
-RFClassifier(min_change_attack_rna_matrix, cell_types, "DC")
-```
-
-# Run vulnerability analysis with `minChangeOverview` and `maxChangeOverview`
-
-The `minChangeOverview` and `maxChangeOverview` functions designed to provide insight into of the min and max change adversarial attacks on each cell type, on various gene modifications.
-
-## Which attack to choose?
-Before generating an attack it is judicious to choose the cell type to attack, and the modification susceptible to lead to a successful attack. Both functions run attack approximations, faster than the original, by studying splices of 100 genes.
-
-## Which classifier is more vulnerable to adversarial attacks?
-Sometimes we want to compare two classifiers and see which one is more vulnerable to adversarial attacks.
-
-## Which modifications to compare
-
-Here we define the modifications to analyse
-```{r modifications for overview}
-modifications <- list()
-modifications[[1]] <- list("perc1")
-modifications[[2]] <- list("perc99")
-```
-
-We run the `min change overview`, this gives us a general idea of which cell types are more vulnerable to min change attacks.
-```{r run min change overview}
-min_change_overview <- minChangeOverview(mat_pbmc, cell_types, CHETAHClassifier, modifications= modifications, max_split_size = 1000)
-min_change_overview
-```
-
-And the `max change overview`, giving us a general idea of which cell types are more vulnerable to max change attacks.
-```{r run max change overview}
-max_change_overview <- maxChangeOverview(mat_pbmc, cell_types, CHETAHClassifier, modifications= modifications, max_split_size = 1000)
-max_change_overview
-```
 
 ```{r session info}
 sessionInfo()
