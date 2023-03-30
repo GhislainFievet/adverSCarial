@@ -44,7 +44,6 @@ Load libraries
 ```{r load libraries, warning = FALSE, message=FALSE}
 library(adverSCarial)
 library(TENxPBMCData)
-library(randomForest)
 ```
 
 Load a pbmc SingleCellExperiment and its cell type classification.
@@ -57,10 +56,10 @@ cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCar
 cell_types <- read.table(cell_types, sep="\t")$cell_type
 ```
 
-The package contains a random forest based classifier working on the pbmc3k dataset: `RFClassifier`. We verify it is classifying properly.
+The package contains a marker based classifier working on the pbmc3k dataset: `MClassifier`. We verify it is classifying properly.
 
 ```{r first classif, message=FALSE}
-res_classif <- RFClassifier(mat_pbmc, cell_types, "DC")
+res_classif <- MClassifier(mat_pbmc, cell_types, "DC")
 ```
 ```{r first classif bis}
 res_classif
@@ -88,7 +87,7 @@ We can specify the `change_type = "not_na"` argument to indicate that we want th
 
 ```{r search min change attack, message=FALSE, cache = TRUE, warning = FALSE}
 adv_min_change = advMinChange(mat_pbmc, cell_types, "DC",
-                        RFClassifier, excl_genes = markers, adv_method = "perc99",
+                        MClassifier, excl_genes = markers, adv_method = "perc99",
                         return_first_found = TRUE, change_type = "not_na",
                         first_dichot = 10)
 ```
@@ -106,9 +105,9 @@ First we modify the `mat_pbmc` matrix on the target cluster.
 mat_adver <- advModifications(mat_pbmc, names(adv_min_change)[1], cell_types, "DC")
 ```
 
-Then classify the "DC" cluster with `RFClassifier`.
+Then classify the "DC" cluster with `MClassifier`.
 ```{r verify the min change attack, cache = TRUE, warning = FALSE, message = FALSE}
-rf_result <- RFClassifier(mat_adver, cell_types, "DC")
+rf_result <- MClassifier(mat_adver, cell_types, "DC")
 ```
 ```{r verify the min change attack bis, cache = TRUE, warning = FALSE}
 rf_result
@@ -123,11 +122,11 @@ The function `advMaxChange` runs a dichotomic search of gene subsets, given the 
 The `max_split_size` argument is the maximum size of dichotomic slices. Set to 1 to have better results, but it will take longer to compute.
 
 ```{r search max change attack, cache = TRUE, warning = FALSE, message=FALSE}
-adv_max_change <- advMaxChange(mat_pbmc, cell_types, "DC", RFClassifier,
+adv_max_change <- advMaxChange(mat_pbmc, cell_types, "DC", MClassifier,
                     excl_genes = markers, max_split_size = 1000, adv_method = "perc99")
 ```
 ```{r search max change attack bis, cache = TRUE, warning = FALSE}
-dim(adv_max_change)
+length(adv_max_change)
 ```
 
 
@@ -143,141 +142,11 @@ mat_max_adver <- advModifications(mat_pbmc, adv_max_change, cell_types, "DC")
 
 Then we verify that classification is still `DC`.
 ```{r verify max change attack, warning = FALSE, cache = TRUE, message=FALSE}
-res_classif <- RFClassifier(mat_adver, cell_types, "DC")
+res_classif <- MClassifier(mat_max_adver, cell_types, "DC")
 ```
 ```{r verify max change attack bis, warning = FALSE, cache = TRUE}
 res_classif
 ```
-
-# Prepare a classifier with `CHETAH`
-
-Here we demonstrate how to implement a classifier, and take the example of `CHETAH` a Bioconductor scRNA-seq classifier.
-
-de Kanter JK, Lijnzaad P, Candelli T, Margaritis T, Holstege FCP (2019). “CHETAH: a selective, hierarchical cell type identification method for single-cell RNA sequencing.” Nucleic Acids Research. ISSN 0305-1048, doi: 10.1093/nar/gkz543.
-
-```{r load chetah, message=FALSE, warning=FALSE }
-library(CHETAH)
-library(Seurat)
-```
-
-First let's load a `train` and a `test` dataset.
-
-```{r load train and test, message=FALSE, warning = FALSE, cache = TRUE}
-# Load scRNA-seq datasets
-train_3k <- TENxPBMCData(dataset = "pbmc3k")
-test_4k <- TENxPBMCData(dataset = "pbmc4k")
-
-cell_types_3k <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
-cell_types_3k <- read.table(cell_types_3k, sep="\t")
-train_3k <- train_3k[,!is.na(cell_types_3k$cell_type)]
-colData(train_3k)$celltypes <- cell_types_3k$cell_type[!is.na(cell_types_3k$cell_type)]
-```
-
-Then we convert the `test` dataset into a `Seurat` object for visualization purpose.
-
-```{r test chetah seurat object, message=FALSE, warning = FALSE, cache = TRUE}
-counts4seurat <- t(matrixFromSCE(test_4k))
-pbmc <- CreateSeuratObject(counts = counts4seurat, project = "pbmc4k", min.cells = 3, min.features = 200)
-# Filter, normalize and find features
-pbmc[["percent.mt"]] <- PercentageFeatureSet(pbmc, pattern = "^MT-")
-pbmc <- subset(pbmc, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
-pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
-pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 2000)
-# Scale and run PCA
-pbmc <- ScaleData(pbmc, features = rownames(pbmc))
-pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
-# Cluster and visualize
-pbmc <- FindNeighbors(pbmc, dims = 1:10)
-pbmc <- FindClusters(pbmc, resolution = 0.5)
-pbmc <- RunUMAP(pbmc, dims = 1:10)
-```
-
-We annotate cells with `CHETAH`.
-
-```{r annotate with CHETAH, message=FALSE, warning = FALSE, cache = TRUE}
-# Anotation with CHETAH
-reference_3k <<- sceConvertToHGNC(train_3k)
-input <- SingleCellExperiment(assays = list(counts = as.matrix(pbmc@assays$RNA@counts)))
-input <- CHETAHclassifier(input = input, ref_cells = reference_3k)
-input <- Classify(input = input, 0.00001)
-pbmc@meta.data[['chetah_classification']] <- input$celltype_CHETAH
-Idents(pbmc) <- 'chetah_classification'
-```
-
-And visualize the results
-
-```{r chetah markers, warning = FALSE, cache = TRUE}
-# Known markers for each cell type
-markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
-              "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
-DotPlot(pbmc, features=markers)
-```
-
-```{r chetah dimplot, warning = FALSE, cache = TRUE}
-DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5)
-```
-
-## Adapt the classifier
-`CHETAH` is a classifier that, when given a list of RNA values for a cell, returns a specific cell type from that list. We need to adjust the classifier so that it can assign a cell type to a group of cells.
-    
-A classifier function has to be formated as follow to be used with *adverSCarial*:
-```R
-    classifier = function(expr, clusters, target){
-                
-                
-                c("cell type", trust_value)
-    }
-```
-    
-The matrix `expr` contains RNA expression values, the list `clusters` consists of the cluster IDs for each cell in `expr`, and `target` is the ID of the cluster for which we want to have a classification. The function returns a vector with the classification result, and a trust indice.
-
-This is how you can adapt `CHETAH` for `adverSCarial`.
-```{r chetah adapt classifier, warning = FALSE, cache = TRUE, message=FALSE}
-CHETAHClassifier <- function(expr, clusters, target){
-    if (!exists("reference_3k")) {
-        reference_3k <<- train_3k
-    }
-    input <- SingleCellExperiment(assays = list(counts = t(expr)))
-    input <- CHETAHclassifier(input = input, ref_cells = reference_3k)
-    input <- Classify(input = input, 0.01)
-    final_predictions = input$celltype_CHETAH[clusters == target]
-    ratio <- as.numeric(sort(table(final_predictions), decreasing = TRUE)[1]) /
-        sum(as.numeric(sort(table(final_predictions), decreasing = TRUE)))
-    predicted_class <- names(sort(table(final_predictions), decreasing = TRUE)[1])
-    if ( ratio < 0.3){
-        predicted_class <- "NA"
-    }
-    c(predicted_class, ratio)
-}
-```
-
-You can now test `CHETAH` classifier with `adverSCarial` tools.
-
-Let's run a `maxChangeAttack`.
-
-```{r chetah max change attack, warning = FALSE, cache = TRUE, message=FALSE}
-rna_matrix <- t(as.matrix(pbmc@assays$RNA@counts))
-clusters_id <- pbmc@meta.data[['chetah_classification']]
-adv_max_change <- advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier,adv_method="perc99", max_split_size = 1000)
-```
-
-
-Let's run this attack and verify if it is successful.
-
-First we modify the `mat_pbmc` matrix on the target cluster, on the genes previously determined.
-
-```{r chetah run max change attack, message=FALSE, warning = FALSE, cache = TRUE}
-mat_max_adver <- advModifications(rna_matrix, adv_max_change, clusters_id, "DC")
-```
-
-Then we verify that classification is still `DC`.
-```{r chetah verify max change attack, warning = FALSE, cache = TRUE, message=FALSE}
-rf_result <- RFClassifier(mat_max_adver, clusters_id, "DC")
-```
-```{r chetah verify max change attack bis, warning = FALSE, cache = TRUE}
-rf_result
-```
-
 
 ```{r session info}
 sessionInfo()

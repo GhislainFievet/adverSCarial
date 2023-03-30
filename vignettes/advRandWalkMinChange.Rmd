@@ -1,0 +1,283 @@
+title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
+    classifiers to adversarial attacks"
+shorttitle: "adverSCarial"
+author: Ghislain FIEVET <ghislain.fievet@gmail.com>
+package: adverSCarial
+abstract: >
+    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    classifiers to adversarial attacks. The package is versatile and provides a format for integrating
+    any type of classifier. It offers functions for studying and generating two types of attacks,
+    min change attack and max change attack. The min change attack involves making a small modification
+    to the input to alter the classification. The max change attack involves making a large modification
+    to the input without changing its classification.
+    The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
+    against adversarial attacks.
+vignette: >
+  %\VignetteIndexEntry{advRandWalkMinChange}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+
+# Load data
+  
+
+```r
+library(adverSCarial)
+library(TENxPBMCData)
+library(CHETAH)
+library(Seurat)
+```
+
+
+```r
+pbmc <- TENxPBMCData(dataset = "pbmc3k")
+mat_pbmc <- matrixFromSCE(pbmc)
+
+cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
+cell_types <- read.table(cell_types, sep="\t")$cell_type
+```
+
+
+
+
+
+
+```
+## Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+## 
+## Number of nodes: 4217
+## Number of edges: 146577
+## 
+## Running Louvain algorithm...
+## Maximum modularity in 10 random starts: 0.8969
+## Number of communities: 10
+## Elapsed time: 0 seconds
+```
+
+
+
+
+
+
+# Advanced attacks with `advRandWalkMinChange`
+
+The `CHETAH` classifier is not vulnerable to one gene attack on `DC`cluster. We can use the `advRandWalkMinChange` function to generate a more complex attack, still looking for a minimum change in the input.
+
+First step is to look for a list of genes suscpetibles to move the classification. We get this list by using the `findMarkers` function from `Seurat`.
+
+
+```r
+markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
+              "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
+
+seurat_markers <- FindMarkers(pbmc, ident.1 = "DC", ident.2="CD14+ Mono")
+genes_4walk <- rownames(seurat_markers[abs(seurat_markers$avg_log2FC)>1,])
+# Remove the officiel markers from the candidates
+genes_4walk <- genes_4walk[!genes_4walk %in% markers]
+```
+
+```r
+genes_4walk
+```
+
+```
+##  [1] "S100A9"   "HLA-DQB1" "S100A8"   "CLEC9A"   "HLA-DRA"  "HLA-DPA1"
+##  [7] "HLA-DPB1" "HLA-DQA1" "HLA-DRB1" "CD74"     "S100A12"  "CLEC10A" 
+## [13] "VCAN"     "IRS2"     "CXCL8"
+```
+
+Then we define a list of modifications to test:
+
+```r
+modifications <- list()
+modifications[[1]] <- list("perc1")
+modifications[[2]] <- list("perc99")
+```
+
+Then we process to a random walk parameter search on these genes and these modifications:
+
+```r
+rand_walk_min_change <- advRandWalkMinChange(mat_pbmc, cell_types, "DC", CHETAHClassifier, genes=genes_4walk, modifications=modifications, walk_length=50)
+```
+
+```r
+head(rand_walk_min_change)
+```
+
+```
+##     prediction     odd genes_modified type_modified iteration S100A9 HLA-DQB1
+## 127 CD14+ Mono 0.46875             11          TRUE        27 perc99    perc1
+## 123 CD14+ Mono     0.5             11          TRUE        23  perc1    perc1
+## 130 CD14+ Mono 0.46875             12          TRUE        30  perc1    perc1
+## 124 CD14+ Mono 0.40625             12          TRUE        24  perc1    perc1
+## 116 CD14+ Mono 0.40625             12          TRUE        16  perc1   perc99
+## 115 CD14+ Mono     0.5             12          TRUE        15     NA    perc1
+##     S100A8 CLEC9A HLA-DRA HLA-DPA1 HLA-DPB1 HLA-DQA1 HLA-DRB1  CD74 S100A12
+## 127     NA  perc1   perc1    perc1    perc1       NA    perc1    NA      NA
+## 123     NA  perc1   perc1    perc1    perc1       NA    perc1 perc1      NA
+## 130  perc1  perc1   perc1    perc1    perc1       NA    perc1 perc1   perc1
+## 124  perc1  perc1   perc1    perc1    perc1   perc99    perc1    NA      NA
+## 116  perc1  perc1   perc1    perc1    perc1    perc1       NA perc1   perc1
+## 115  perc1  perc1      NA    perc1    perc1    perc1    perc1 perc1   perc1
+##     CLEC10A   VCAN  IRS2  CXCL8
+## 127   perc1 perc99 perc1  perc1
+## 123   perc1  perc1 perc1     NA
+## 130      NA perc99 perc1     NA
+## 124   perc1     NA perc1  perc1
+## 116      NA  perc1    NA  perc1
+## 115      NA  perc1 perc1 perc99
+```
+The first line of `rand_walk_min_change` contains the parameter for the attack:
+
+```r
+best_results <- rand_walk_min_change[1,]
+best_results <- best_results[6:ncol(best_results)]
+best_results <- best_results[,best_results!="NA"]
+best_results
+```
+
+```
+##     S100A9 HLA-DQB1 CLEC9A HLA-DRA HLA-DPA1 HLA-DPB1 HLA-DRB1 CLEC10A   VCAN
+## 127 perc99    perc1  perc1   perc1    perc1    perc1    perc1   perc1 perc99
+##      IRS2 CXCL8
+## 127 perc1 perc1
+```
+
+Then we modify the rna expression matrix to fool the classifier:
+
+```r
+min_change_attack_rna_matrix <- mat_pbmc
+for ( i in seq_len(length(colnames(best_results)))){
+    gene2modif <- colnames(best_results)[i]
+    modif <- best_results[1,i]
+    min_change_attack_rna_matrix <- advModifications(min_change_attack_rna_matrix,
+        gene2modif, cell_types, "DC", adv_method=modif)
+}
+```
+
+And we check it successfully changed the classification.
+
+```r
+res_classif <- CHETAHClassifier(min_change_attack_rna_matrix, cell_types, "DC")
+```
+
+
+```r
+res_classif
+```
+
+```
+## [1] "CD14+ Mono" "0.46875"
+```
+
+
+```r
+sessionInfo()
+```
+
+```
+## R version 4.2.0 (2022-04-22)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 20.04.4 LTS
+## 
+## Matrix products: default
+## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
+## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=fr_FR.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=fr_FR.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=fr_FR.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=fr_FR.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] SeuratObject_4.1.3          Seurat_4.3.0               
+##  [3] CHETAH_1.12.1               ggplot2_3.4.1              
+##  [5] TENxPBMCData_1.14.0         HDF5Array_1.24.2           
+##  [7] rhdf5_2.40.0                DelayedArray_0.22.0        
+##  [9] Matrix_1.5-3                SingleCellExperiment_1.18.1
+## [11] SummarizedExperiment_1.26.1 Biobase_2.56.0             
+## [13] GenomicRanges_1.48.0        GenomeInfoDb_1.32.4        
+## [15] IRanges_2.30.1              S4Vectors_0.34.0           
+## [17] BiocGenerics_0.42.0         MatrixGenerics_1.8.1       
+## [19] matrixStats_0.63.0          adverSCarial_0.99.0        
+## [21] BiocStyle_2.24.0           
+## 
+## loaded via a namespace (and not attached):
+##   [1] AnnotationHub_3.4.0           corrplot_0.92                
+##   [3] BiocFileCache_2.4.0           igraph_1.4.1                 
+##   [5] plyr_1.8.8                    lazyeval_0.2.2               
+##   [7] sp_1.6-0                      splines_4.2.0                
+##   [9] listenv_0.9.0                 scattermore_0.8              
+##  [11] digest_0.6.31                 htmltools_0.5.4              
+##  [13] viridis_0.6.2                 fansi_1.0.4                  
+##  [15] magrittr_2.0.3                memoise_2.0.1                
+##  [17] tensor_1.5                    cluster_2.1.4                
+##  [19] ROCR_1.0-11                   limma_3.52.4                 
+##  [21] globals_0.16.2                Biostrings_2.64.1            
+##  [23] spatstat.sparse_3.0-0         colorspace_2.1-0             
+##  [25] blob_1.2.3                    rappdirs_0.3.3               
+##  [27] ggrepel_0.9.3                 xfun_0.37                    
+##  [29] dplyr_1.1.0                   crayon_1.5.2                 
+##  [31] RCurl_1.98-1.10               jsonlite_1.8.4               
+##  [33] spatstat.data_3.0-0           progressr_0.13.0             
+##  [35] zoo_1.8-11                    survival_3.5-3               
+##  [37] glue_1.6.2                    polyclip_1.10-4              
+##  [39] gtable_0.3.1                  zlibbioc_1.42.0              
+##  [41] XVector_0.36.0                leiden_0.4.3                 
+##  [43] Rhdf5lib_1.18.2               future.apply_1.10.0          
+##  [45] abind_1.4-5                   scales_1.2.1                 
+##  [47] pheatmap_1.0.12               DBI_1.1.3                    
+##  [49] spatstat.random_3.1-3         miniUI_0.1.1.1               
+##  [51] Rcpp_1.0.10                   viridisLite_0.4.1            
+##  [53] xtable_1.8-4                  reticulate_1.28              
+##  [55] bit_4.0.5                     htmlwidgets_1.6.1            
+##  [57] httr_1.4.5                    RColorBrewer_1.1-3           
+##  [59] ellipsis_0.3.2                ica_1.0-3                    
+##  [61] pkgconfig_2.0.3               uwot_0.1.14                  
+##  [63] deldir_1.0-6                  sass_0.4.5                   
+##  [65] dbplyr_2.3.1                  utf8_1.2.3                   
+##  [67] tidyselect_1.2.0              rlang_1.0.6                  
+##  [69] reshape2_1.4.4                later_1.3.0                  
+##  [71] AnnotationDbi_1.58.0          munsell_0.5.0                
+##  [73] BiocVersion_3.15.2            tools_4.2.0                  
+##  [75] cachem_1.0.7                  cli_3.6.0                    
+##  [77] generics_0.1.3                RSQLite_2.3.0                
+##  [79] ExperimentHub_2.4.0           ggridges_0.5.4               
+##  [81] evaluate_0.20                 stringr_1.5.0                
+##  [83] fastmap_1.1.1                 goftest_1.2-3                
+##  [85] yaml_2.3.7                    bioDist_1.68.0               
+##  [87] knitr_1.42                    bit64_4.0.5                  
+##  [89] fitdistrplus_1.1-8            purrr_1.0.1                  
+##  [91] RANN_2.6.1                    KEGGREST_1.36.3              
+##  [93] dendextend_1.16.0             nlme_3.1-162                 
+##  [95] pbapply_1.7-0                 future_1.31.0                
+##  [97] mime_0.12                     compiler_4.2.0               
+##  [99] plotly_4.10.1                 filelock_1.0.2               
+## [101] curl_5.0.0                    png_0.1-8                    
+## [103] interactiveDisplayBase_1.34.0 spatstat.utils_3.0-1         
+## [105] tibble_3.1.8                  bslib_0.4.2                  
+## [107] stringi_1.7.12                lattice_0.20-45              
+## [109] vctrs_0.5.2                   pillar_1.8.1                 
+## [111] lifecycle_1.0.3               rhdf5filters_1.8.0           
+## [113] BiocManager_1.30.20           spatstat.geom_3.0-6          
+## [115] lmtest_0.9-40                 jquerylib_0.1.4              
+## [117] RcppAnnoy_0.0.20              irlba_2.3.5.1                
+## [119] data.table_1.14.8             cowplot_1.1.1                
+## [121] bitops_1.0-7                  patchwork_1.1.2              
+## [123] httpuv_1.6.9                  R6_2.5.1                     
+## [125] bookdown_0.32                 promises_1.2.0.1             
+## [127] KernSmooth_2.23-20            gridExtra_2.3                
+## [129] parallelly_1.34.0             codetools_0.2-19             
+## [131] MASS_7.3-57                   withr_2.5.0                  
+## [133] sctransform_0.3.5             GenomeInfoDbData_1.2.8       
+## [135] parallel_4.2.0                grid_4.2.0                   
+## [137] tidyr_1.3.0                   rmarkdown_2.20               
+## [139] Rtsne_0.16                    spatstat.explore_3.0-6       
+## [141] shiny_1.7.4
+```

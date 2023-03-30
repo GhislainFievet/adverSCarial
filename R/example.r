@@ -15,36 +15,39 @@
 #' )
 #' cell_types <- read.table(cell_types, sep = "\t")$cell_type
 #'
-#' RFClassifier(mat_rna, cell_types, "DC")
+#' MClassifier(mat_rna, cell_types, "DC")
 #'
 #' @export
-RFClassifier <- function(expr, clusters, target) {
-    requireNamespace("randomForest")
-    colnames(expr) <- stringr::str_replace_all(colnames(expr), "-", "_")
-    colnames(expr) <- stringr::str_replace(colnames(expr), "^", "g_")
-
-    if (!exists("rf_scrnaseq")) {
-        load(system.file("extdata", "rf_scrnaseq", package = "adverSCarial"))
-        rf_scrnaseq <<- rf
+MClassifier <- function(expr, clusters, target) {
+    if (mean(expr[clusters == target, "LTB"]) > 7) {
+        return(c("Memory CD4 T", 1))
     }
-
-    rf_features <- names(rf_scrnaseq$forest$xlevels)
-    c_diff_genes <- setdiff(rf_features, colnames(expr))
-    expr <- as.data.frame(expr)
-    expr[, c_diff_genes] <- 0
-
-    final_predictions <- predict(
-                    rf_scrnaseq, expr[clusters == target, ])
-    ratio <- as.numeric(sort(table(final_predictions),
-        decreasing = TRUE
-    )[1]) /
-        sum(as.numeric(sort(table(final_predictions), decreasing = TRUE)))
-    predicted_class <- names(sort(table(final_predictions),
-        decreasing = TRUE)[1])
-    if (ratio < 0.5) {
-        predicted_class <- "NA"
+    if (mean(expr[clusters == target, "CD79A"]) > 2) {
+        return(c("B", 1))
     }
-    c(predicted_class, ratio)
+    if (mean(expr[clusters == target, "S100A9"]) > 10) {
+        return(c("CD14+ Mono", 1))
+    }
+    if (mean(expr[clusters == target, "GZMB"]) > 5) {
+        return(c("NK", 1))
+    }
+    if (mean(expr[clusters == target, "GZMK"]) > 2) {
+        return(c("CD8 T", 1))
+    }
+    if (mean(expr[clusters == target, "LDHB"]) > 17 &&
+        mean(expr[clusters == target, "LDHB"]) < 20) {
+        return(c("Naive CD4 T", 1))
+    }
+    if (mean(expr[clusters == target,"LST1"]) > 10) {
+        return (c("FCGR3A+ Mono", 1))
+    }
+    if (mean(expr[clusters == target, "CD74"]) > 50) {
+        return(c("DC", 1))
+    }
+    if (mean(expr[clusters == target, "PF4"]) > 10) {
+        return(c("Platelet", 1))
+    }
+    c("undetermined", 1)
 }
 
 .get_unique_index <- function(c_array) {
