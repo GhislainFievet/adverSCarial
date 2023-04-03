@@ -246,6 +246,27 @@ a=1
 ```{r trick33, echo=FALSE}
 a=1
 ```
+```{r trick34, echo=FALSE}
+a=1
+```
+```{r trick35, echo=FALSE}
+a=1
+```
+```{r trick36, echo=FALSE}
+a=1
+```
+```{r trick37, echo=FALSE}
+a=1
+```
+```{r trick38, echo=FALSE}
+a=1
+```
+```{r trick39, echo=FALSE}
+a=1
+```
+```{r trick40, echo=FALSE}
+a=1
+```
 
 ```{r session info}
 sessionInfo()
