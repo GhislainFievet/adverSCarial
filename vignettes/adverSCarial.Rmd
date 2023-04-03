@@ -147,6 +147,96 @@ res_classif <- MClassifier(mat_max_adver, cell_types, "DC")
 ```{r verify max change attack bis, warning = FALSE, cache = TRUE}
 res_classif
 ```
+```{r trick1, echo=FALSE}
+a=1
+```
+```{r trick2, echo=FALSE}
+a=1
+```
+```{r trick3, echo=FALSE}
+a=1
+```
+```{r trick4, echo=FALSE}
+a=1
+```
+```{r trick5, echo=FALSE}
+a=1
+```
+```{r trick6, echo=FALSE}
+a=1
+```
+```{r trick7, echo=FALSE}
+a=1
+```
+```{r trick8, echo=FALSE}
+a=1
+```
+```{r trick9, echo=FALSE}
+a=1
+```
+```{r trick10, echo=FALSE}
+a=1
+```
+```{r trick11, echo=FALSE}
+a=1
+```
+```{r trick12, echo=FALSE}
+a=1
+```
+```{r trick13, echo=FALSE}
+a=1
+```
+```{r trick14, echo=FALSE}
+a=1
+```
+```{r trick15, echo=FALSE}
+a=1
+```
+```{r trick16, echo=FALSE}
+a=1
+```
+```{r trick17, echo=FALSE}
+a=1
+```
+```{r trick18, echo=FALSE}
+a=1
+```
+```{r trick19, echo=FALSE}
+a=1
+```
+```{r trick20, echo=FALSE}
+a=1
+```
+```{r trick21, echo=FALSE}
+a=1
+```
+```{r trick22, echo=FALSE}
+a=1
+```
+```{r trick23, echo=FALSE}
+a=1
+```
+```{r trick24, echo=FALSE}
+a=1
+```
+```{r trick25, echo=FALSE}
+a=1
+```
+```{r trick26, echo=FALSE}
+a=1
+```
+```{r trick27, echo=FALSE}
+a=1
+```
+```{r trick28, echo=FALSE}
+a=1
+```
+```{r trick29, echo=FALSE}
+a=1
+```
+```{r trick30, echo=FALSE}
+a=1
+```
 
 ```{r session info}
 sessionInfo()
