@@ -25,13 +25,13 @@
 #'
 #' @export
 MClassifier <- function(expr, clusters, target) {
-    if ( !is.matrix(expr) && !is.data.frame(expr) && !is(expr,"DFrame")){
+    if ( !is(expr, 'matrix') && !is(expr,'data.frame') && !is(expr,"DFrame")){
         stop("The argument expr must be a matrix, a data.frame or a DataFrame.")
     }
-    if (!is.character(target)) {
+    if (!is(target,"character")) {
         stop("The argument target must be character.")
     }
-    if (!is.character(clusters)) {
+    if (!is(clusters,"character")) {
         stop("The argument clusters must be a vector of character.")
     }
     if (is(expr, "DFrame")){
@@ -104,7 +104,7 @@ MClassifier <- function(expr, clusters, target) {
 #'
 #' @export
 matrixFromSCE <- function(sce) {
-    if ( class(sce) != 'SingleCellExperiment'){
+    if ( !is(sce,'SingleCellExperiment')){
         stop("The argument sce must be a SingleCellExperiment.")
     }
     ind2keep <- .get_unique_index(
@@ -132,7 +132,7 @@ matrixFromSCE <- function(sce) {
 #'
 #' @export
 sceConvertToHGNC <- function(sce){
-    if ( class(sce) != 'SingleCellExperiment'){
+    if ( !is(sce,'SingleCellExperiment')){
         stop("The argument sce must be a SingleCellExperiment.")
     }
     mat_sce <- matrixFromSCE(sce)
