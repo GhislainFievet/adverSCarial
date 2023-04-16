@@ -1,0 +1,145 @@
+#' Gives an overview of the susceptibility to min change
+#' attacks, for each cell type, for a given list of modifications.
+#'
+#' @details Running the advMinChange function for each cell type
+#' to see which ones are more vulerable can take a long time. The
+#' aim of the minChangeOverview function is to make this process faster.
+#' It uses a default value of 100 for the 'maxSplitSize' parameter. So,
+#' the dichotomic process of the advMinChange function stops as soon
+#' as the fold length is lower than 100. You can have more accurate
+#' results with maxSplitSize=1, but it will take longer.
+#' This function aims also to run the advMinChange for several given
+#' modifications. You can specify a list of modifications as so - each
+#' item of the list should be 1 or 2 length size.
+#' The 1 length vector must contain the prerecorded modifications, 'perc1'
+#' or 'perc99'.
+#' The 2 length vector must have as first item:
+#'  - 'fixed', in this case the second item should be the value to be
+#'  replaced by.
+#'  - 'full_row_fct', 'target_row_fct', 'target_matrix_fct' or
+#'  'full_matrix_fct'. In this case the second item should be a function.
+#' Let's say we want to analysis the susceptibility to min change attack
+#' for 3 modifications: "perc1", the modification of each value of the
+#' cluster by 1000, and a custom modification stored inside a function myFct.
+#' Then the 'modification' parameter should be:
+#' my_modifications = list(c("perc1"),
+#'                         c("fixed", 1000),
+#'                         c("full_matrix_fct", myFct))
+#' 
+#' The function returns a dataframe with the number of genes of the max
+#' change attack for each modification in columns, for each cell type in rows.
+#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' cells are rows and genes are columns.
+#' @param clusters a character vector of the clusters to which the cells belong
+#' @param classifier a classifier in the suitable format
+#' @param exclGenes a character vector of genes to exclude from the analysis
+#' @param genes a character vector of genes in case you want to limit the
+#' analysis on a subset of genes
+#' @param modifications the list of the modifications to study
+#' @param advMethod the name of the method to use
+#' @param advFixedValue the numeric value to use in case of
+#' advMethod=`fixed`
+#' @param advFct the function to use in case advMethod
+#' belongs to the following list: `full_row_fct`, `target_row_fct`,
+#' `target_matrix_fct`, `full_matrix_fct`
+#' @param firstDichot the initial number of slices before
+#' the dichotomic search
+#' @param maxSplitSize max size of dichotomic slices.
+#' @param changeType `any` consider each misclassification,
+#'  `not_na` consider each misclassification but NA.
+#' @param verbose logical, set to TRUE to activate verbose mode
+#' @return a data.frame storing the number of min change attack 
+#' possible for each cell type and each modification.
+#' @examples
+#' MyClassifier <- function(expr, clusters, target) {
+#'    c("T cell", 0.9)
+#' }
+#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3))
+#' genes <- c("CD4", "CD8A")
+#' clusters_id <- c("B cell","B cell","T cell","T cell")
+#'
+#' minChangeOverview(rna_expression, clusters_id,
+#' MyClassifier, modifications = list(c("perc1"), c("perc99")))
+#' 
+#' myModif = function(x){
+#'    return(sample(1:10,1))
+#' }
+#' 
+#' my_modifications = list(c("perc1"),
+#'                         c("fixed", 1000),
+#'                         c("full_matrix_fct", myModif))
+#' minChangeOverview(rna_expression, clusters_id,
+#'  MyClassifier, modifications = my_modifications)
+#' 
+#' @export
+minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
+            genes = c(), modifications = list(c("perc1"), c("perc99")),
+            advMethod = "perc99", advFixedValue = 3, advFct = NULL,
+            firstDichot = 100, maxSplitSize = 100, changeType = "any",
+            verbose = FALSE) {
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
+        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    }
+    if (!is.character(clusters)) {
+        stop("The argument clusters must be a vector of character.")
+    }
+    if (!is.function(classifier)){
+        stop("The argument classifier must be a function.")
+    }
+    if (!is.character(exclGenes) && length(exclGenes)>0) {
+        stop("The argument exclGenes must be character or vector of character.")
+    }
+    if (!is.character(genes) && length(genes)>0) {
+        stop("The argument genes must be character or vector of character.")
+    }
+    if (!is.list(modifications)) {
+        stop("The argument modifications must be a list.")
+    }
+    if (!is.character(advMethod)) {
+        stop("The argument advMethod must be character.")
+    }
+    if (!is.numeric(firstDichot)){
+        stop("The argument firstDichot must be numeric.")
+    }
+    if (!is.numeric(maxSplitSize)){
+        stop("The argument maxSplitSize must be numeric.")
+    }
+    if (!is.character(changeType)) {
+        stop("The argument changeType must be character.")
+    }
+    if (!is.logical(verbose)){
+        stop("The argument verbose must be logical.")
+    }
+    if (is(exprs, "DFrame")){
+        exprs <- as.data.frame(exprs)
+    }
+
+    if (length(modifications) == 0) {
+        df_result <- .minOverArgModifs(exprs, clusters, classifier, exclGenes,
+                            genes, advMethod, advFixedValue, advFct,
+                            firstDichot, maxSplitSize, changeType, verbose)
+    } else {
+        df_result <- .minOverListModifs(exprs, clusters, classifier, exclGenes,
+                            genes, modifications, firstDichot, maxSplitSize,
+                            changeType, verbose)
+    }
+    df_result
+}
+
+.gridWarning <- function(modifications, genes, iamsure){
+    if ((length(modifications) + 1)^length(genes) > 100000 & !iamsure) {
+        message("Exit because of too many combinations to test: ",
+            (length(modifications) + 1)^length(genes))
+        message("This will probably make your computer freeze.")
+        message("You should lower the number of genes and/or",
+            " of modifications. For example 5 genes and 2 modifications",
+            " gives 243 combinations to test")
+        message("You can use the iamsure=TRUE option",
+            "to run the function anyway.")
+        return(TRUE)
+    } else {
+        return (FALSE)
+    }
+}
+
