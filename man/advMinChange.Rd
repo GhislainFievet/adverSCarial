@@ -12,51 +12,51 @@ advMinChange(
   clusters,
   target,
   classifier,
-  excl_genes = c(),
+  exclGenes = c(),
   genes = c(),
-  adv_method = "perc99",
-  adv_fixed_value = 3,
-  adv_fct = NULL,
-  first_dichot = 100,
-  max_split_size = 1,
-  return_first_found = FALSE,
-  change_type = "any",
+  advMethod = "perc99",
+  advFixedValue = 3,
+  advFct = NULL,
+  firstDichot = 100,
+  maxSplitSize = 1,
+  returnFirstFound = FALSE,
+  changeType = "any",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
 \item{classifier}{a classifier in the suitable format}
 
-\item{excl_genes}{a list of genes to exclude from the analysis}
+\item{exclGenes}{a character vector of genes to exclude from the analysis}
 
-\item{genes}{a list of genes in case you want to limit the
+\item{genes}{a character vector of genes in case you want to limit the
 attack on a subset of genes}
 
-\item{adv_method}{the name of the method to use}
+\item{advMethod}{the name of the method to use}
 
-\item{adv_fixed_value}{the numeric value to use in case of
-adv_method=\code{fixed}}
+\item{advFixedValue}{the numeric value to use in case of
+advMethod=\code{fixed}}
 
-\item{adv_fct}{the function to use in case adv_method
+\item{advFct}{the function to use in case advMethod
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
-\item{first_dichot}{the initial number of slices before
+\item{firstDichot}{the initial number of slices before
 the dichotomic search}
 
-\item{max_split_size}{max size of dichotomic slices}
+\item{maxSplitSize}{max size of dichotomic slices}
 
-\item{return_first_found}{set to TRUE to return result when a
+\item{returnFirstFound}{set to TRUE to return result when a
 the first misclassification is found}
 
-\item{change_type}{\code{any} consider each misclassification,
+\item{changeType}{\code{any} consider each misclassification,
 \code{not_na} consider each misclassification but NA.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
@@ -70,6 +70,31 @@ adversarial attack  refers to the modification of a single gene
 within a cluster, leading to a change in its classification. The function
 returns a list of genes/new classification.
 }
+\details{
+This function aims to get all genes that when modified individually
+can lead to a misclassification. You can refer to the
+'advModifications' function documentation to more details on how
+to define a modification.
+The function is made as a two step parameter search. The first step is to
+split the genes in 'firstDichot' sets, 100 by default. Then each set is
+studied by a dichotomic process in a recursive function.
+The aim of sarting by a hight value of sets, instead of strating directly by
+the dichotomic research is to avoid the following scenario: we modify 5000
+genes, the modification of one gene conpensates the modification of another.
+The classification remains unchanged, whereas there is a one gene
+classification modifying inside the 5000.
+The dichotomic process runs as follow. The function receives a list of
+genes, make the modification of the whole list and make the classification.
+Three scenarios possible:
+\itemize{
+\item the classification remains the same as the target cluster. The function
+returns, and the dichotomic process continues.
+\item the classification is changed. There is only one gene in the list, the
+function returns the gene and the new classification.
+\item the classification is changed. There is more than one gene in the list,
+the genes list is split in two, and the dichotomic process continues.
+}
+}
 \examples{
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
@@ -80,5 +105,5 @@ genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
 advMinChange(rna_expression, clusters_id,
-"T cell", MyClassifier, adv_method="perc99")
+"T cell", MyClassifier, advMethod="perc99")
 }

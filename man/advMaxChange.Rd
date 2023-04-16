@@ -11,51 +11,80 @@ advMaxChange(
   clusters,
   target,
   classifier,
-  excl_genes = c(),
+  exclGenes = c(),
   genes = c(),
-  adv_method = "perc99",
-  adv_fixed_value = 3,
-  adv_fct = NULL,
-  max_split_size = 1,
+  advMethod = "perc99",
+  advFixedValue = 3,
+  advFct = NULL,
+  maxSplitSize = 1,
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
 \item{classifier}{a classifier in the suitable format}
 
-\item{excl_genes}{a list of genes to exclude from the analysis}
+\item{exclGenes}{a list of genes to exclude from the analysis}
 
 \item{genes}{a list of genes in case you want to limit the
 attack on a subset of genes}
 
-\item{adv_method}{the name of the method to use}
+\item{advMethod}{the name of the method to use}
 
-\item{adv_fixed_value}{the numeric value to use in case of
-adv_method=\code{fixed}}
+\item{advFixedValue}{the numeric value to use in case of
+advMethod=\code{fixed}}
 
-\item{adv_fct}{the function to use in case adv_method
+\item{advFct}{the function to use in case advMethod
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
-\item{max_split_size}{max size of dichotomic slices.}
+\item{maxSplitSize}{max size of dichotomic slices.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
-a list of genes you can modify on a cluster without
+a character vector of genes you can modify on a cluster without
 modifying its classification
 }
 \description{
 Find a max change adversarial attack. It finds the longer
 list of genes you can modify on a cluster without changing its
 classification.
+}
+\details{
+This function aims to get the largest part of the genes
+that can be modified without altering the classification,
+considering a given modification. You can refer to the
+'advModifications' function documentation to more details on how
+to define a modification.
+The search is made by a dichotomic process, on a reccursive function.
+At each iteration the function splits the genes in two groups. It
+proceeds to the modification of the RNA gene value of the first group,
+makes its classification. Then three possible scenarios.
+\itemize{
+\item the classification is the same as the target cluster. We concat
+the genes list to the previous one, make the classification, and it still
+gives same classification. Then we return the genes list.
+\item the classification is the same as the target cluster. We concat
+the genes list to the previous one, make the classification, and it
+gives a different classification. This happens often, you can modify
+the gene A with a classification of T cell, or modify the gene B with a
+classification of T cell, but modifying A and B returns another
+classification. In this case we split the genes list in two and try again.
+\item the classification is not the same as the target cluster. In this case we
+split the genes list in two and try again.
+The iteration process stops when the length of the genes list is lower
+than the value of the 'maxSplitSize' argument. So you should set it to 1
+to have the maximum number of genes for the max change attack. This function
+is used by the 'overMaxChange' function with a default argument value of 100
+to increase speed, and still returns significant results.
+}
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {
@@ -67,5 +96,5 @@ genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
 advMaxChange(rna_expression, clusters_id,
-"T cell", MyClassifier, adv_method="perc99")
+"T cell", MyClassifier, advMethod="perc99")
 }

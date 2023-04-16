@@ -2,53 +2,48 @@
 % Please edit documentation in R/adverscarial.r
 \name{maxChangeOverview}
 \alias{maxChangeOverview}
-\title{Run an approximation of advMaxChange on all clusters
-for a given modification. The precision of the
-approximation can be controlled using the \code{max_split_size}
-parameter, with lower values resulting in greater precision
-but longer processing time. The purpose of this
-approximation is to determine which clusters are most
-susceptible to max change adversarial attacks.}
+\title{Gives an overview of the susceptibility to max change
+attacks, for each cell type, for a given list of modifications.}
 \usage{
 maxChangeOverview(
   exprs,
   clusters,
   classifier,
-  excl_genes = c(),
+  exclGenes = c(),
   genes = c(),
-  modifications = list(list("perc1"), list("perc99")),
-  adv_method = "perc99",
-  adv_fixed_value = 3,
-  adv_fct = NULL,
-  max_split_size = 100,
+  modifications = list(c("perc1"), c("perc99")),
+  advMethod = "perc99",
+  advFixedValue = 3,
+  advFct = NULL,
+  maxSplitSize = 100,
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{classifier}{a classifier in the suitable format}
 
-\item{excl_genes}{a list of genes to exclude from the analysis}
+\item{exclGenes}{a character vector of genes to exclude from the analysis}
 
-\item{genes}{a list of genes in case you want to limit the
+\item{genes}{a character vector of genes in case you want to limit the
 analysis on a subset of genes}
 
 \item{modifications}{the list of the modifications to study}
 
-\item{adv_method}{the name of the method to use}
+\item{advMethod}{the name of the method to use}
 
-\item{adv_fixed_value}{the numeric value to use in case of
-adv_method=\code{fixed}}
+\item{advFixedValue}{the numeric value to use in case of
+advMethod=\code{fixed}}
 
-\item{adv_fct}{the function to use in case adv_method
+\item{advFct}{the function to use in case advMethod
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
-\item{max_split_size}{max size of dichotomic slices.}
+\item{maxSplitSize}{max size of dichotomic slices.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
@@ -56,13 +51,39 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 a list of genes/new classification tuples
 }
 \description{
-Run an approximation of advMaxChange on all clusters
-for a given modification. The precision of the
-approximation can be controlled using the \code{max_split_size}
-parameter, with lower values resulting in greater precision
-but longer processing time. The purpose of this
-approximation is to determine which clusters are most
-susceptible to max change adversarial attacks.
+Gives an overview of the susceptibility to max change
+attacks, for each cell type, for a given list of modifications.
+}
+\details{
+Running the advMaxChange function for each cell type
+to see which ones are more vulerable can take a long time. The
+aim of the maxChangeOverview function is to make this process faster.
+It uses a default value of 100 for the 'maxSplitSize' parameter. So,
+the dichotomic process of the advMaxChange function stops as soon
+as the fold length is lower than 100. You can have more accurate
+results with maxSplitSize=1, but it will take longer.
+This function aims also to run the advMaxChange for several given
+modifications. You can specify a list of modifications as so - each
+item of the list should be 1 or 2 length size.
+The 1 length vector must contain the prerecorded modifications, 'perc1'
+or 'perc99'.
+The 2 length vector must have as first item:
+\itemize{
+\item 'fixed', in this case the second item should be the value to be
+replaced by.
+\item 'full_row_fct', 'target_row_fct', 'target_matrix_fct' or
+'full_matrix_fct'. In this case the second item should be a function.
+Let's say we want to analysis the susceptibility to max change attack
+for 3 modifications: "perc1", the modification of each value of the
+cluster by 1000, and a custom modification stored inside a function myFct.
+Then the 'modification' parameter should be:
+my_modifications = list(c("perc1"),
+c("fixed", 1000),
+c("full_matrix_fct", myFct))
+}
+
+The function returns a dataframe with the number of genes of the max
+change attack for each modification in columns, for each cell type in rows.
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {
@@ -74,5 +95,15 @@ genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
 maxChangeOverview(rna_expression, clusters_id,
-MyClassifier, modifications = list(list("perc1"), list("perc99")))
+MyClassifier, modifications = list(c("perc1"), c("perc99")))
+
+myModif = function(x){
+   return(sample(1:10,1))
+}
+
+my_modifications = list(c("perc1"),
+                        c("fixed", 1000),
+                        c("full_matrix_fct", myModif))
+maxChangeOverview(rna_expression, clusters_id,
+ MyClassifier, modifications = my_modifications)
 }

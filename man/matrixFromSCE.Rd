@@ -18,6 +18,12 @@ with unique hgnc gene names in columns
 Returns the RNA expression matrix from a SingleCellExperiment
 with unique hgnc gene names in columns
 }
+\details{
+This function retrieves from a SingleCellExperiment
+object the raw RNA expression value corresponding to the hgnc
+genes. The resulting matrix can then be used with adverSCarial
+packages.
+}
 \examples{
 library(TENxPBMCData)
 

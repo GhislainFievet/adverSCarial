@@ -11,27 +11,27 @@ advGridMinChange(
   target,
   classifier,
   genes,
-  modifications = list(list("perc1"), list("perc99")),
-  return_first_found = FALSE,
+  modifications = list(c("perc1"), c("perc99")),
+  returnFirstFound = FALSE,
   verbose = FALSE,
   iamsure = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
 \item{classifier}{a classifier in the suitable format}
 
-\item{genes}{the list of genes to study}
+\item{genes}{the character vector of genes to study}
 
 \item{modifications}{the list of the modifications to study}
 
-\item{return_first_found}{set to TRUE to return result when a
+\item{returnFirstFound}{set to TRUE to return result when a
 the first misclassification is found}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
@@ -40,11 +40,37 @@ the first misclassification is found}
 when \code{genes} list is too long, set to \code{TRUE} to run anyway.}
 }
 \value{
-dataframe results of the classification of all the grid combinations
+data.frame results of the classification of all the grid combinations
 }
 \description{
 Grid search of min change adversarial attack. Tries each
 combination on a cluster, given a list of genes and a list of modifications.
+}
+\details{
+This function aims to find the shortest combination of genes
+allowing to make a min change attack. It will test every possible combination
+for a given gene list. This function can take a long time to run, and we
+recommand to use the random walk search advRandWalkMinChange function instead
+for lists above 10 genes.
+
+You can specify a list of modifications as so - each item of the list should
+be 1 or 2 length size.
+The 1 length vector must contain the prerecorded modifications, 'perc1'
+or 'perc99'.
+The 2 length vector must have as first item:
+\itemize{
+\item 'fixed', in this case the second item should be the value to be
+replaced by.
+\item 'full_row_fct', 'target_row_fct', 'target_matrix_fct' or
+'full_matrix_fct'. In this case the second item should be a function.
+Let's say we want to analysis the susceptibility to min change attack
+for 3 modifications: "perc1", the modification of each value of the
+cluster by 1000, and a custom modification stored inside a function myFct.
+Then the 'modification' parameter should be:
+my_modifications = list(c("perc1"),
+c("fixed", 1000),
+c("full_matrix_fct", myFct))
+}
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {
@@ -57,5 +83,16 @@ clusters_id <- c("B cell","B cell","T cell","T cell")
 
 advGridMinChange(rna_expression, clusters_id, "T cell",
 MyClassifier, genes=genes,
-modifications = list(list("perc1"), list("perc99")))
+modifications = list(c("perc1"), c("perc99")))
+
+myModif = function(x){
+   return(sample(1:10,1))
+}
+
+my_modifications = list(c("perc1"),
+                        c("fixed", 1000),
+                        c("full_matrix_fct", myModif))
+advGridMinChange(rna_expression, clusters_id, "T cell",
+MyClassifier, genes=genes, modifications = my_modifications)
+
 }

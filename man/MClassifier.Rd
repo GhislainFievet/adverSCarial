@@ -2,14 +2,15 @@
 % Please edit documentation in R/example.r
 \name{MClassifier}
 \alias{MClassifier}
-\title{Example cell type classifier for the pbmc3k dataset}
+\title{Example cell type classifier for pbmc clustered datasets.}
 \usage{
 MClassifier(expr, clusters, target)
 }
 \arguments{
-\item{expr}{RNA expression matrix}
+\item{expr}{a matrix, a data.frame or a DataFrame of numeric
+RNA expression, cells are rows and genes are columns.}
 
-\item{clusters}{list of clusters to which each cell belongs}
+\item{clusters}{vector of clusters to which each cell belongs}
 
 \item{target}{name of the cell cluster to classify}
 }
@@ -17,7 +18,14 @@ MClassifier(expr, clusters, target)
 a vector with the classification, and the odd
 }
 \description{
-Example cell type classifier for the pbmc3k dataset
+Example cell type classifier for pbmc clustered datasets.
+}
+\details{
+This classifier aims at testing the adverSCarial
+package of real pbmc data. It is a simple marker based
+classifier. It looks at the average value of a few genes
+inside a cluster, and returns the associated cell type.
+Markers where found by differential expressions.
 }
 \examples{
 library(TENxPBMCData)

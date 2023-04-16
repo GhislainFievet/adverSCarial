@@ -172,7 +172,7 @@ Let's run a `maxChangeAttack`.
 ```r
 rna_matrix <- t(as.matrix(pbmc@assays$RNA@counts))
 clusters_id <- pbmc@meta.data[['chetah_classification']]
-adv_max_change <- advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier,adv_method="perc99", max_split_size = 2000)
+adv_max_change <- advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier, advMethod="perc99", maxSplitSize = 2000)
 ```
 
 

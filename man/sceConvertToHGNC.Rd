@@ -15,6 +15,10 @@ the SingleCellExperiment object keeping unique HGNC gene
 \description{
 Returns a SingleCellExperiment object keeping unique HGNC gene
 }
+\details{
+Sometimes classifiers need HGNC instead of ensemble genes
+to run. This function allows to make the conversion.
+}
 \examples{
 library(TENxPBMCData)
 

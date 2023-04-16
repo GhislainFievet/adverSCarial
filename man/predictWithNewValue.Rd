@@ -12,30 +12,30 @@ predictWithNewValue(
   clusters,
   target,
   classifier,
-  adv_method = "perc99",
-  adv_fixed_value = 3,
-  adv_fct = NULL,
+  advMethod = "perc99",
+  advFixedValue = 3,
+  advFct = NULL,
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{genes}{the list of genes to modify}
+\item{genes}{the character vector of genes to modify}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
 \item{classifier}{a classifier in the suitable format}
 
-\item{adv_method}{the name of the method to use}
+\item{advMethod}{the name of the method to use}
 
-\item{adv_fixed_value}{the numeric value to use in case of
-adv_method=\code{fixed}}
+\item{advFixedValue}{the numeric value to use in case of
+advMethod=\code{fixed}}
 
-\item{adv_fct}{the function to use in case adv_method
+\item{advFct}{the function to use in case advMethod
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
@@ -49,6 +49,14 @@ Returns a classification and an odd value from a
 RNA expression matrix, for given genes, for a given cluster,
 for a given modification.
 }
+\details{
+This function aims to concatenate the following actions:
+\itemize{
+\item modify the RNA gene expression
+\item classify the result
+This is a function widely used in the other functions of the package.
+}
+}
 \examples{
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
@@ -59,5 +67,5 @@ genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
 predictWithNewValue(rna_expression, genes, clusters_id,
-"T cell", MyClassifier, adv_method="perc99")
+"T cell", MyClassifier, advMethod="perc99")
 }

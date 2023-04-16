@@ -10,28 +10,28 @@ advModifications(
   genes,
   clusters,
   target,
-  adv_method = "perc99",
-  adv_fixed_value = 3,
-  adv_fct = NULL,
+  advMethod = "perc99",
+  advFixedValue = 3,
+  advFct = NULL,
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{genes}{the list of genes to modify}
+\item{genes}{the character vector of genes to modify}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
-\item{adv_method}{the name of the method to use}
+\item{advMethod}{the name of the method to use}
 
-\item{adv_fixed_value}{the numeric value to use in case of
-adv_method=\code{fixed}}
+\item{advFixedValue}{the numeric value to use in case of
+advMethod=\code{fixed}}
 
-\item{adv_fct}{the function to use in case adv_method
+\item{advFct}{the function to use in case advMethod
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
@@ -45,6 +45,38 @@ with the specified modification
 Returns a modified RNA expression matrix, for a given cluster,
 for a given modification.
 }
+\details{
+The motivation for this function is to standardize the modifications
+we want to study in the attacks. We give as argument a matrix of the RNA
+expression, the gene and the target cells we want to modify. Then we have
+three arguments allowing to specify what modification we want to apply on
+these cells. The advMethod contains, a specific prerecorded modification
+or an indication on how to use the other two arguments.
+The prerecorded modifications available for the advMethod argument are:
+\itemize{
+\item 'perc1', replace the value by the whole matrix 1 percentile value of
+the gene. It is as if we biologically switched off the gene.
+\item 'perc99', replace the value by the whole matrix 99 percentile value of
+the gene. It is as if we biologically switched on the gene to the maximum.
+The value of the advMethod argument can also be 'fixed', in this case the
+modification would be to replace the value of the gene of the wanted cells
+by the value of the argument 'advFixedValue'. This can be useful to test
+aberrant values like negative integer, absurdly high values of character
+values.
+The value of the advMethod argument can also be 'full_row_fct',
+'target_row_fct', 'target_matrix_fct' or 'full_matrix_fct'. They are
+used when we want to use a custom modification function, with the 'advFct'
+argument:
+\item 'full_row_fct' indicate that the 'advFct' function takes the whole gene
+values as input.
+\item 'target_row_fct' indicate that the 'advFct' function takes target cells
+gene values as input.
+\item 'full_matrix_fct' indicate that the 'advFct' function takes the whole gene
+expression values as input.
+\item 'target_matrix_fct' indicate that the 'advFct' function takes target cells
+all genes values as input.
+}
+}
 \examples{
 rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
      CD8B=c(2,2,3,3))
@@ -52,5 +84,5 @@ genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
 advModifications(rna_expression, genes, clusters_id,
-"T cell", adv_method="perc99")
+"T cell", advMethod="perc99")
 }

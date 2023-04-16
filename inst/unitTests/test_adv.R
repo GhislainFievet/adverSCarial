@@ -18,8 +18,8 @@ test_advModifications <- function () {
     clusters <- c("b","b","t","t")
     exprs_res1 <- data.frame(a=c(10,10,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     checkTrue( all(advModifications(exprs, genes, clusters, "b",
-        adv_method = "fixed",
-        adv_fixed_value = 10) == exprs_res1))
+        advMethod = "fixed",
+        advFixedValue = 10) == exprs_res1))
     checkTrue(all(advModifications(
         data.frame(a=c(1)), "a", "a", "a") == 1))
 }

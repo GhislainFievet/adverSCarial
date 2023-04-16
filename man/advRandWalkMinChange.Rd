@@ -2,11 +2,7 @@
 % Please edit documentation in R/adverscarial.r
 \name{advRandWalkMinChange}
 \alias{advRandWalkMinChange}
-\title{Random walk search of min change adversarial attack.
-Step 1 is to find a seed by trying random combinations of
-genes and modifications on a cluster until the classification is altered.
-Step 2 is to perform a random walk search to reduce the number of genes
-needed to change the classification."}
+\title{Random walk search of min change adversarial attack.}
 \usage{
 advRandWalkMinChange(
   exprs,
@@ -14,52 +10,83 @@ advRandWalkMinChange(
   target,
   classifier,
   genes,
-  modifications = list(list("perc1"), list("perc99")),
-  first_batch = 100,
-  walk_length = 100,
-  step_change_ratio = 0.2,
-  while_max_count = 10000,
-  change_type = "any",
+  modifications = list(c("perc1"), c("perc99")),
+  firstBatch = 100,
+  walkLength = 100,
+  stepChangeRatio = 0.2,
+  whileMaxCount = 10000,
+  changeType = "any",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or dataframe of numeric RNA expression,
+\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
 cells are rows and genes are columns.}
 
-\item{clusters}{a list of the clusters to which the cells belong}
+\item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
 \item{classifier}{a classifier in the suitable format}
 
-\item{genes}{the list of genes to study}
+\item{genes}{the character vector of genes to study}
 
 \item{modifications}{the list of the modifications to study}
 
-\item{first_batch}{the maximum number of try in step 1}
+\item{firstBatch}{the maximum number of try in step 1}
 
-\item{walk_length}{the maximum number of try in step 2}
+\item{walkLength}{the maximum number of try in step 2}
 
-\item{step_change_ratio}{ratio of parameters change in new walk step}
+\item{stepChangeRatio}{ratio of parameters change in new walk step}
 
-\item{while_max_count}{the maximum number of try when looking
+\item{whileMaxCount}{the maximum number of try when looking
 for new combination of parameters}
 
-\item{change_type}{\code{any} consider each misclassification,
+\item{changeType}{\code{any} consider each misclassification,
 \code{not_na} consider each misclassification but NA.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
-dataframe results of the classification of all the grid combinations
+data.frame results of the classification of all the grid combinations
 }
 \description{
 Random walk search of min change adversarial attack.
+}
+\details{
+The parameter search by grid can take a long time,
+this function aims to make a parameter search faster.
+We have a function, advMinChange, looking for one gene attacks.
+The advRandWalkMinChange function aims to find a multiple genes
+attack, with the fewer genes possible.
+At first the user have to provide a list of genes to test, for
+example by running differential statistics between two cell clusters.
+The user should also provide a list of modifications to test, to
+define as so - each item of the list should be 1 or 2 length size.
+The 1 length vector must contain the prerecorded modifications, 'perc1'
+or 'perc99'.
+The 2 length vector must have as first item:
+\itemize{
+\item 'fixed', in this case the second item should be the value to be
+replaced by.
+\item 'full_row_fct', 'target_row_fct', 'target_matrix_fct' or
+'full_matrix_fct'. In this case the second item should be a function.
+Let's say we want to analysis the susceptibility to min change attack
+for 3 modifications: "perc1", the modification of each value of the
+cluster by 1000, and a custom modification stored inside a function myFct.
+Then the 'modification' parameter should be:
+my_modifications = list(c("perc1"),
+c("fixed", 1000),
+c("full_matrix_fct", myFct))
+}
+
+Then the function will try to find the best combination of these genes
+and modifications to make the min change attack.
 Step 1 is to find a seed by trying random combinations of
 genes and modifications on a cluster until the classification is altered.
 Step 2 is to perform a random walk search to reduce the number of genes
-needed to change the classification."
+needed to change the classification.
+The
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {
@@ -72,11 +99,21 @@ clusters_id <- c("B cell","B cell","T cell","T cell")
 
 advRandWalkMinChange(rna_expression, clusters_id, "T cell",
 MyClassifier, genes=genes,
-modifications = list(list("perc1"), list("perc99")))
+modifications = list(c("perc1"), c("perc99")))
 
 # Stop at first attack discovery, whitout going into the walk
 # parameter search.
 advRandWalkMinChange(rna_expression, clusters_id, "T cell",
-MyClassifier, genes=genes,
-modifications = list(list("perc1"), list("perc99")), walk_length=0)
+ MyClassifier, genes=genes,
+ modifications = list(c("perc1"), c("perc99")), walkLength=0)
+
+myModif = function(x){
+   return(sample(1:10,1))
+}
+
+my_modifications = list(c("perc1"),
+                        c("fixed", 1000),
+                        c("full_matrix_fct", myModif))
+advRandWalkMinChange(rna_expression, clusters_id, "T cell",
+ MyClassifier, genes=genes, modifications = my_modifications)
 }

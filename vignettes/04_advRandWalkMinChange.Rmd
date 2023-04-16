@@ -88,15 +88,13 @@ genes_4walk
 Then we define a list of modifications to test:
 
 ```r
-modifications <- list()
-modifications[[1]] <- list("perc1")
-modifications[[2]] <- list("perc99")
+modifications <- list(c("perc1"), c("perc99"))
 ```
 
 Then we process to a random walk parameter search on these genes and these modifications:
 
 ```r
-rand_walk_min_change <- advRandWalkMinChange(mat_pbmc, cell_types, "DC", CHETAHClassifier, genes=genes_4walk, modifications=modifications, walk_length=50)
+rand_walk_min_change <- advRandWalkMinChange(mat_pbmc, cell_types, "DC", CHETAHClassifier, genes=genes_4walk, modifications=modifications, walkLength=50)
 ```
 
 ```r
@@ -150,7 +148,7 @@ for ( i in seq_len(length(colnames(best_results)))){
     gene2modif <- colnames(best_results)[i]
     modif <- best_results[1,i]
     min_change_attack_rna_matrix <- advModifications(min_change_attack_rna_matrix,
-        gene2modif, cell_types, "DC", adv_method=modif)
+        gene2modif, cell_types, "DC", advMethod=modif)
 }
 ```
 
