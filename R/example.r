@@ -25,7 +25,7 @@
 #'
 #' @export
 MClassifier <- function(expr, clusters, target) {
-    if ( !is.matrix(expr) && !is.data.frame(expr) && !"DFrame" %in% class(expr)){
+    if ( !is.matrix(expr) && !is.data.frame(expr) && !is(expr,"DFrame")){
         stop("The argument expr must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(target)) {
@@ -34,7 +34,7 @@ MClassifier <- function(expr, clusters, target) {
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
     }
-    if ("DFrame" %in% class(expr)){
+    if (is(expr, "DFrame")){
         expr <- as.data.frame(expr)
     }
     if (mean(expr[clusters == target, "LTB"]) > 7) {

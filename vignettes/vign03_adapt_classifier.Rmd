@@ -120,14 +120,14 @@ markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", 
 DotPlot(pbmc, features=markers)
 ```
 
-![plot of chunk chetah markers](figure/chetah markers-1.png)
+![plot of chunk chetah markers](figure/chetahmarkers1.png)
 
 
 ```r
 DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5)
 ```
 
-![plot of chunk chetah dimplot](figure/chetah dimplot-1.png)
+![plot of chunk chetah dimplot](figure/chetahdimplot1.png)
 
 ## Adapt the classifier
 `CHETAH` is a classifier that, when given a list of RNA values for a cell, returns a specific cell type from that list. We need to adjust the classifier so that it can assign a cell type to a group of cells.

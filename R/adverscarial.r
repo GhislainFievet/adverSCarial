@@ -57,7 +57,7 @@ advModifications <- function(exprs, genes, clusters,
                             target, advMethod = "perc99",
                             advFixedValue = 3, advFct = NULL,
                             verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(genes)) {
@@ -80,7 +80,7 @@ advModifications <- function(exprs, genes, clusters,
         message("Modify data for ", length(genes),
             " genes for cluster ", target)
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -217,7 +217,7 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
                                 classifier, advMethod = "perc99",
                                 advFixedValue = 3,
                                 advFct = NULL, verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(genes)) {
@@ -243,7 +243,7 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
         message("Modify data for ", length(genes),
             " genes for cluster ", target)
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -320,7 +320,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                         exclGenes = c(), genes = c(), advMethod = "perc99",
                         advFixedValue = 3, advFct = NULL,
                         maxSplitSize = 1, verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(clusters)) {
@@ -347,7 +347,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -560,7 +560,7 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
         genes = c(), advMethod = "perc99", advFixedValue = 3,
         advFct = NULL, firstDichot = 100, maxSplitSize = 1,
         returnFirstFound = FALSE, changeType = "any", verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(clusters)) {
@@ -596,7 +596,7 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -874,7 +874,7 @@ maxChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
                             advMethod = "perc99", advFixedValue = 3,
                             advFct = NULL, maxSplitSize = 100,
                             verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(clusters)) {
@@ -901,7 +901,7 @@ maxChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -1088,7 +1088,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             advMethod = "perc99", advFixedValue = 3, advFct = NULL,
             firstDichot = 100, maxSplitSize = 100, changeType = "any",
             verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(clusters)) {
@@ -1121,7 +1121,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -1218,7 +1218,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
 advGridMinChange <- function(exprs, clusters, target, classifier,
                 genes, modifications = list(c("perc1"), c("perc99")),
                 returnFirstFound = FALSE, verbose = FALSE, iamsure = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(clusters)) {
@@ -1245,7 +1245,7 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     if (!is.logical(iamsure)){
         stop("The argument iamsure must be logical.")
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
@@ -1599,7 +1599,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         modifications = list(c("perc1"), c("perc99")), firstBatch = 100,
         walkLength = 100, stepChangeRatio = 0.2, whileMaxCount = 10000,
         changeType = "any", verbose = FALSE) {
-    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !"DFrame" %in% class(exprs)){
+    if ( !is.matrix(exprs) && !is.data.frame(exprs) && !is(exprs,"DFrame")){
         stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
     }
     if (!is.character(clusters)) {
@@ -1635,7 +1635,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if ("DFrame" %in% class(exprs)){
+    if (is(exprs, "DFrame")){
         exprs <- as.data.frame(exprs)
     }
 
