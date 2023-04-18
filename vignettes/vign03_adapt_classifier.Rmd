@@ -136,12 +136,13 @@ A classifier function has to be formated as follow to be used with *adverSCarial
 ```R
     classifier = function(expr, clusters, target){
                 
-                
-                c("cell type", trust_value)
+                # `score` should be numeric between 0 and 1
+                # 1 being the highest confidance into the cell type classification.
+                c("cell type", score)
     }
 ```
     
-The matrix `expr` contains RNA expression values, the list `clusters` consists of the cluster IDs for each cell in `expr`, and `target` is the ID of the cluster for which we want to have a classification. The function returns a vector with the classification result, and a trust indice.
+The matrix `expr` contains RNA expression values, the vector `clusters` consists of the cluster IDs for each cell in `expr`, and `target` is the ID of the cluster for which we want to have a classification. The function returns a vector with the classification result, and a score.
 
 This is how you can adapt `CHETAH` for `adverSCarial`.
 

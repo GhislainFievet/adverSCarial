@@ -32,11 +32,22 @@
 #' Step 2 is to perform a random walk search to reduce the number of genes
 #' needed to change the classification.
 #' The 
-#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' @param exprs a matrix or a data.frame of numeric RNA expression,
 #' cells are rows and genes are columns.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
-#' @param classifier a classifier in the suitable format
+#' @param classifier a classifier in the suitable format.
+#' A classifier function should be formated as follow:
+#' classifier = function(expr, clusters, target){
+#'      # Making the classification
+#'      c("cell type", score)
+#' }
+#' `score` should be numeric between 0 and 1, 1 being the highest confidance
+#' into the cell type classification.
+#' The matrix `expr` contains RNA expression values, the vector `clusters`
+#' consists of the cluster IDs for each cell in `expr`, and `target` is the
+#' ID of the cluster for which we want to have a classification.
+#' The function returns a vector with the classification result, and a score.
 #' @param genes the character vector of genes to study
 #' @param modifications the list of the modifications to study
 #' @param firstBatch the maximum number of try in step 1
@@ -47,7 +58,7 @@
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
 #' @param verbose logical, set to TRUE to activate verbose mode
-#' @return data.frame results of the classification of all the grid combinations
+#' @return DataFrame results of the classification of all the grid combinations
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
@@ -81,8 +92,8 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         modifications = list(c("perc1"), c("perc99")), firstBatch = 100,
         walkLength = 100, stepChangeRatio = 0.2, whileMaxCount = 10000,
         changeType = "any", verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
-        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
+        stop("The argument exprs must be a matrix or a data.frame.")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -117,18 +128,15 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if (is(exprs, "DFrame")){
-        exprs <- as.data.frame(exprs)
-    }
 
-    before_walk <- .randWalkBeforeWalk(exprs, genes, modifications,
+    beforeWalk <- .randWalkBeforeWalk(exprs, genes, modifications,
         clusters, target, classifier, firstBatch, verbose)
-    previousStrComb <- before_walk[[1]]
-    function_results <- before_walk[[2]]
-    bestAttackParams <- before_walk[[3]]
-    if (function_results[1, "type_modified"] == FALSE) {
+    previousStrComb <- beforeWalk[[1]]
+    functionResults <- beforeWalk[[2]]
+    bestAttackParams <- beforeWalk[[3]]
+    if (functionResults[1, "typeModified"] == FALSE) {
         message("No modified type, try with a higher firstBatch argument")
-        return(function_results)
+        return(functionResults)
     }
     for (i in seq_len(walkLength)) {
         message("Walk step ", i, " on ", walkLength)
@@ -137,24 +145,242 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
                 length(bestAttackParams), " genes")
         }
         # Create a new vector of parameters to test
-        rw_new_vector <- .randWalkNewVector(previousStrComb, modifications,
+        rwNewVector <- .randWalkNewVector(previousStrComb, modifications,
             bestAttackParams, stepChangeRatio, whileMaxCount,
-            function_results)
+            functionResults)
         # If infinite loop kill function and return result
-        if ( !rw_new_vector[[1]] ) {return(rw_new_vector[[2]])}
-        newWalkParams <- rw_new_vector[[2]]
-        new_walk_step <- rw_new_vector[[3]]
+        if ( !rwNewVector[[1]] ) {return(rwNewVector[[2]])}
+        newWalkParams <- rwNewVector[[2]]
+        newWalkStep <- rwNewVector[[3]]
 
-        previousStrComb <- c(previousStrComb, new_walk_step)
-        function_results <- .randWalkTryNewVector(exprs, genes,
+        previousStrComb <- c(previousStrComb, newWalkStep)
+        functionResults <- .randWalkTryNewVector(exprs, genes,
             newWalkParams, modifications, clusters, target,
-            classifier, bestAttackParams, i, function_results,
+            classifier, bestAttackParams, i, functionResults,
             changeType, verbose)
     }
-    function_results <- function_results[order(
-            as.numeric(function_results$genes_modified)), ]
-    function_results <- function_results[order(
-            function_results$type_modified, decreasing = TRUE), ]
-    function_results
+    functionResults <- functionResults[order(
+            as.numeric(functionResults$genesModified)), ]
+    functionResults <- functionResults[order(
+            functionResults$typeModified, decreasing = TRUE), ]
+    S4Vectors::DataFrame(functionResults)
 }
 
+.randWalkTryNewVector <- function(exprs, genes, newWalkParams, modifications,
+        clusters, target, classifier, bestAttackParams, i,
+        functionResults, changeType, verbose){
+    exprsTemp <- exprs
+    rowResults <- c()
+    rowResultsInt <- c()
+    # Try the new params
+    for (geneInd in seq_along(genes)) {
+        modifInd <- as.numeric(newWalkParams[geneInd])
+        if (modifInd != length(modifications) + 1) {
+            mod1 <- modifications[[modifInd]][[1]]
+            if (length(modifications[[modifInd]]) == 1) {
+                exprsTemp <- advModifications(exprsTemp,
+                    genes[geneInd], clusters, target,
+                    advMethod = mod1, verbose = verbose)
+            } else {
+                mod2 <- modifications[[modifInd]][[2]]
+                exprsTemp <- advModifications(exprsTemp, genes[geneInd],
+                    clusters, target, advMethod = mod1,
+                    advFixedValue = mod2, advFct = mod2,
+                    verbose = verbose)
+            }
+            rowResults <- c(rowResults, paste(modifications[[modifInd]],
+                        collapse = " "))
+            rowResultsInt <- c(rowResultsInt, modifInd)
+        } else {
+            rowResults <- c(rowResults, "NA")
+            rowResultsInt <- c(rowResultsInt, modifInd)
+        }
+    }
+    genesModified <- length(genes) - sum(rowResults == "NA")
+    previousGenesModified <- length(genes) -
+        sum(bestAttackParams == (length(modifications) + 1))
+    classResults <- classifier(exprsTemp, clusters, target)
+    typeModified <- classResults[1] != target
+    if ( changeType == "not_na")
+        typeModified <- (classResults[1] != target) &&
+            classResults[1] != "NA"
+    if (typeModified && genesModified <= previousGenesModified) {
+        bestAttackParams <- rowResultsInt
+        message( "Better attack with only ", genesModified,
+            " genes modified")
+    }
+    rowResults <- c(classResults[1], classResults[2],
+        genesModified, typeModified, (i + 1), rowResults)
+    functionResults <- rbind(rowResults, functionResults)
+    functionResults
+}
+
+.randWalkNewVector <- function(previousStrComb, modifications,
+    bestAttackParams, stepChangeRatio, whileMaxCount, functionResults){
+    newWalkParams <- c()
+    newWalkStep <- -1
+    killCount <- 0
+    while (newWalkStep %in% previousStrComb ||
+        length(newWalkParams[
+            newWalkParams != (length(modifications) + 1)
+        ]) >=
+            length(bestAttackParams[bestAttackParams !=
+                (length(modifications) + 1)])) {
+        newWalkParams <- vapply(bestAttackParams, function(param){
+            if (param != length(modifications) + 1) {
+                if (sample(seq_len(round(1 / stepChangeRatio)), 1) == 1) {
+                    return(sample(seq_len(length(modifications) + 1), 1))
+                } else {
+                    return(param)
+                }
+            } else {
+                if (sample(seq_len(round(sum(newWalkParams ==
+                    (length(modifications) + 1))^(1 / 2) /
+                    stepChangeRatio)), 1) == 1) {
+                    return(sample(seq_len(length(modifications) + 1), 1))
+                } else {
+                    return(param)
+                }
+            }
+        }, numeric(1))
+        newWalkStep <- paste(newWalkParams, collapse = " ")
+        # If inifite loop kill function and return results
+        if (killCount > whileMaxCount) {
+            functionResults <- functionResults[order(
+                    as.numeric(functionResults$genesModified)), ]
+            functionResults <- functionResults[order(
+                functionResults$typeModified, decreasing = TRUE), ]
+            message("Inifite loop, kill function and return results")
+            return(list(FALSE, functionResults))
+        }
+        killCount <- killCount + 1
+    }
+    return(list(TRUE, newWalkParams, newWalkStep))
+}
+
+.randWalkBeforeWalk <- function(exprs, genes, modifications,
+            clusters, target, classifier, firstBatch, verbose){
+    initObjs <- .initRandWalk(modifications, genes, firstBatch)
+    previousStrComb <- initObjs[[1]]; testsGrid <- initObjs[[2]]
+    functionResults <- initObjs[[3]]; functionResultsInt <- initObjs[[4]]
+    results <- initObjs[[5]]; resultsInt <- initObjs[[6]]
+    rwSeed <- .randWalkGetSeed(testsGrid, exprs, genes, modifications,
+        clusters, target, classifier, results, resultsInt,
+        previousStrComb, verbose)
+    results <- rwSeed[[1]]; resultsInt <- rwSeed[[2]]
+    previousStrComb <- rwSeed[[3]]
+
+    results$genesModified <-
+        length(genes) - apply(results, 1, function(x) sum(x == "NA"))
+    results$typeModified <- results$prediction != target
+    results$iteration <- 1
+    results <- results[, c("prediction", "odd", "genesModified",
+            "typeModified", "iteration", genes)]
+    resultsInt$genesModified <- length(genes) - apply( resultsInt, 1,
+                        function(x) sum(x == (length(modifications) + 1)))
+    resultsInt$typeModified <- resultsInt$prediction != target
+    resultsInt$iteration <- 1
+    resultsInt <- resultsInt[, c("prediction", "odd", "genesModified",
+        "typeModified", "iteration", genes)]
+    functionResults <- rbind(results, functionResults)
+    functionResults <-
+        functionResults[order(functionResults$genesModified), ]
+    functionResults <- functionResults[order(functionResults$typeModified,
+            decreasing = TRUE), ]
+    functionResultsInt <- rbind(resultsInt, functionResultsInt)
+    functionResultsInt <-
+        functionResultsInt[order(functionResultsInt$genesModified), ]
+    functionResultsInt <- functionResultsInt[
+        order(functionResultsInt$typeModified, decreasing = TRUE), ]
+    bestAttackParams <- functionResultsInt[1, 6:ncol(functionResultsInt)]
+    list(previousStrComb, functionResults, bestAttackParams)
+}
+
+.randWalkGetSeed <- function(testsGrid, exprs, genes, modifications, clusters,
+    target, classifier, results, resultsInt, previousStrComb, verbose){
+    i<- 1; newPreviousStrComb <- c()
+    while (i <= nrow(testsGrid)) {
+        message("Running first batch to determine walk seed: ",
+            i, " on ", nrow(testsGrid))
+        exprsTemp <- exprs
+        newPreviousStrComb <- c(newPreviousStrComb, previousStrComb[i])
+        rowResults <- c()
+        rowResultsInt <- c()
+        for (geneInd in seq_along(genes)) {
+            modifInd <- testsGrid[i, geneInd]
+            if (modifInd != length(modifications) + 1) {
+                mod1 <- modifications[[modifInd]][[1]]
+                if (length(modifications[[modifInd]]) == 1) {
+                    exprsTemp <- advModifications(exprsTemp,
+                        genes[geneInd], clusters, target,
+                        advMethod = mod1, verbose = verbose)
+                } else {
+                    mod2 <- modifications[[modifInd]][[2]]
+                    exprsTemp <- advModifications(exprsTemp,
+                        genes[geneInd], clusters, target,
+                        advMethod = mod1,advFixedValue = mod2,
+                        advFct = mod2, verbose = verbose)
+                }
+                rowResults <- c( rowResults,
+                    paste(modifications[[modifInd]], collapse = " "))
+                rowResultsInt <- c(rowResultsInt, modifInd)
+            } else {
+                rowResults <- c(rowResults, "NA")
+                rowResultsInt <- c(rowResultsInt, modifInd)
+            }
+        }
+        classResults <- classifier(exprsTemp, clusters, target)
+        rowResults <- c(rowResults, classResults[1], classResults[2])
+        rowResultsInt <- c(unlist(rowResultsInt),
+                    classResults[1], classResults[2])
+        results <- rbind(results, rowResults)
+        resultsInt <- rbind(resultsInt, rowResultsInt)
+        colnames(results) <- c(genes, "prediction", "odd")
+        colnames(resultsInt) <- c(genes, "prediction", "odd")
+        if (classResults[1] == target) {
+            i <- i + 1
+        } else {
+            i <- nrow(testsGrid) + 1
+        }
+    }
+    list(results, resultsInt, newPreviousStrComb)
+}
+
+.initRandWalk <- function(modifications, genes, firstBatch){
+    previousStrComb <- c(-1)
+    if ((length(modifications) + 1)^length(genes) > firstBatch) {
+        testsGrid <- data.frame(matrix(ncol = length(genes), nrow = 0))
+        while (nrow(testsGrid) < (firstBatch - length(modifications))) {
+            randSample <- sample(seq_len(length(modifications) + 1),
+                length(genes),
+                replace = TRUE
+            )
+            strRandSample <- paste(randSample, collapse = " ")
+            if (!strRandSample %in% previousStrComb) {
+                testsGrid <- rbind(testsGrid, randSample)
+            }
+            previousStrComb <- c(previousStrComb, strRandSample)
+        }
+        for (i in seq_along(modifications)) {
+            testsGrid <- rbind(rep(i, length(genes)), testsGrid)
+        }
+        testsGrid <- as.matrix(testsGrid)
+    } else {
+        testsGrid <- gtools::permutations(n = length(modifications) + 1,
+            r = length(genes), repeats.allowed = TRUE)
+    }
+    functionResults <- data.frame(matrix(ncol = length(genes) + 5, nrow = 0))
+    colnames(functionResults) <- c("prediction", "odd", "genesModified",
+        "typeModified", "iteration", genes)
+    functionResultsInt <- data.frame(
+        matrix(ncol = length(genes) + 5, nrow = 0)
+    )
+    colnames(functionResultsInt) <- c( "prediction", "odd",
+        "genesModified", "typeModified", "iteration", genes)
+    results <- data.frame(matrix(ncol = length(genes) + 2, nrow = 0))
+    colnames(results) <- c(genes, "prediction", "odd")
+    resultsInt <- data.frame(matrix(ncol = length(genes) + 2, nrow = 0))
+    colnames(resultsInt) <- c(genes, "prediction", "odd")
+    return (list(previousStrComb, testsGrid, functionResults,
+        functionResultsInt, results, resultsInt))
+}

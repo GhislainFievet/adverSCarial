@@ -25,11 +25,22 @@
 #' - the classification is changed. There is more than one gene in the list,
 #'  the genes list is split in two, and the dichotomic process continues.
 #' 
-#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' @param exprs a matrix or a data.frame of numeric RNA expression,
 #' cells are rows and genes are columns.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
-#' @param classifier a classifier in the suitable format
+#' @param classifier a classifier in the suitable format.
+#' A classifier function should be formated as follow:
+#' classifier = function(expr, clusters, target){
+#'      # Making the classification
+#'      c("cell type", score)
+#' }
+#' `score` should be numeric between 0 and 1, 1 being the highest confidance
+#' into the cell type classification.
+#' The matrix `expr` contains RNA expression values, the vector `clusters`
+#' consists of the cluster IDs for each cell in `expr`, and `target` is the
+#' ID of the cluster for which we want to have a classification.
+#' The function returns a vector with the classification result, and a score.
 #' @param exclGenes a character vector of genes to exclude from the analysis
 #' @param genes a character vector of genes in case you want to limit the
 #' attack on a subset of genes
@@ -64,8 +75,8 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
         genes = c(), advMethod = "perc99", advFixedValue = 3,
         advFct = NULL, firstDichot = 100, maxSplitSize = 1,
         returnFirstFound = FALSE, changeType = "any", verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
-        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
+        stop("The argument exprs must be a matrix or a data.frame.")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -100,80 +111,76 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if (is(exprs, "DFrame")){
-        exprs <- as.data.frame(exprs)
-    }
 
-    genes_index <- seq_len(ncol(exprs))
+    genesIndex <- seq_len(ncol(exprs))
     if (length(exclGenes) != 0 && length(genes) == 0) {
-        genes_to_remove <- unlist(lapply(exclGenes, function(str_gene){
-            if (!is.na(match(str_gene, colnames(exprs)))) {
-                return(-match(str_gene, colnames(exprs)))
+        genesToRemove <- unlist(lapply(exclGenes, function(strGene){
+            if (!is.na(match(strGene, colnames(exprs)))) {
+                return(-match(strGene, colnames(exprs)))
             } else {
                 return(NULL)
             }
         }))
-        if (length(genes_to_remove) != 0)
-            genes_index <- genes_index[genes_to_remove]
+        if (length(genesToRemove) != 0)
+            genesIndex <- genesIndex[genesToRemove]
     }
     if (length(genes) != 0) {
         exclGenes <- unique(exclGenes)
         genes <- unique(genes)
-        genes_to_keep <- genes[!genes %in% exclGenes]
-        ind_genes_to_keep <- unlist(lapply(genes_to_keep), function(str_gene){
-            if (!is.na(match(str_gene, colnames(exprs)))) {
-                return(match(str_gene, colnames(exprs)))
+        genesToKeep <- genes[!genes %in% exclGenes]
+        indGenesToKeep <- unlist(lapply(genesToKeep), function(strGene){
+            if (!is.na(match(strGene, colnames(exprs)))) {
+                return(match(strGene, colnames(exprs)))
             } else {
                 return(NULL)
             }
         })
-        if (length(ind_genes_to_keep) != 0)
-            genes_index <- genes_index[ind_genes_to_keep]
+        if (length(indGenesToKeep) != 0)
+            genesIndex <- genesIndex[indGenesToKeep]
     }
-    c_split_index <- split(genes_index, seq_len(firstDichot))
-    l_splits_results <- c(); i <- 1
+    cSplitIndex <- split(genesIndex, seq_len(firstDichot))
+    lSplitsResults <- c(); i <- 1
     while(i <= firstDichot) {
-        prev_time <- Sys.time()
+        prevTime <- Sys.time()
         message(paste0("Split number: ", i, "/", firstDichot))
-        if (length(unlist(c_split_index[i])) != 0) {
-            l_splits_results <- c( l_splits_results,
+        if (length(unlist(cSplitIndex[i])) != 0) {
+            lSplitsResults <- c( lSplitsResults,
                 .predictionDichotMinChange(exprs,
-                    colnames(exprs)[unlist(c_split_index[i])],
+                    colnames(exprs)[unlist(cSplitIndex[i])],
                     clusters, target, classifier, advMethod = advMethod,
                     advFixedValue = advFixedValue, advFct = advFct,
                     maxSplitSize = maxSplitSize,
                     returnFirstFound = returnFirstFound,
                     changeType=changeType,verbose = verbose))
         }
-        message(paste0("Split time: ", Sys.time() - prev_time))
-        ifelse(length(l_splits_results) > 0 && returnFirstFound,
+        message(paste0("Split time: ", Sys.time() - prevTime))
+        ifelse(length(lSplitsResults) > 0 && returnFirstFound,
             i <- firstDichot + 1, i <- i + 1)
     }
-    l_splits_results
+    lSplitsResults
 }
 
 .dichotMinSplit <- function(lResults, cGeneSplitValue, exprs,
             genes, clusters, target, classifier, advMethod, advFixedValue,
             advFct, maxSplitSize, changeType, returnFirstFound, verbose){
-    # if ( length(lResults) > 0 && returnFirstFound){ return(lResults)}
     if (length(cGeneSplitValue) != 0) {
         if (verbose) {
             message("before predictWithNewValue")
             message(length(cGeneSplitValue))}
-        mod_obj <- predictWithNewValue(exprs, cGeneSplitValue,
+        modObj <- predictWithNewValue(exprs, cGeneSplitValue,
             clusters, target, classifier,
             advMethod = advMethod,
             advFixedValue = advFixedValue, advFct = advFct,
             verbose = TRUE)
-        cell_type <- mod_obj[1]; celltype_score <- mod_obj[2]
-        message(cell_type); message(celltype_score)
-        if (cell_type != target) {
+        cellType <- modObj[1]; celltypeScore <- modObj[2]
+        message(cellType); message(celltypeScore)
+        if (cellType != target) {
             if (length(cGeneSplitValue) <= maxSplitSize &&
-                (changeType == "any" || cell_type != "NA" )) {
+                (changeType == "any" || cellType != "NA" )) {
                 message("Store gene:")
                 message(cGeneSplitValue)
                 lResults[[paste(cGeneSplitValue, collapse = "__")]] <-
-                    c(cell_type, celltype_score)
+                    c(cellType, celltypeScore)
             } else {
                 if ( length(cGeneSplitValue) > maxSplitSize){
                     if (verbose) { message("Before predictionDichot:")
@@ -198,17 +205,17 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
         returnFirstFound = FALSE, changeType = "any",
         verbose = TRUE) {
     if ( returnFirstFound && length(lResults) > 0) return (lResults)
-    c_gene_split <- split(unlist(genes), c(1,2))
+    cGeneSplit <- split(unlist(genes), c(1,2))
     message(paste0("genes size: ", length(unlist(genes))))
     lResults <- .dichotMinSplit(lResults,
-                    unname(unlist(c_gene_split[1])), exprs,
+                    unname(unlist(cGeneSplit[1])), exprs,
                     genes, clusters, target, classifier, advMethod,
                     advFixedValue, advFct,
                     maxSplitSize, changeType,returnFirstFound,
                     verbose)
     if ( returnFirstFound && length(lResults) > 0) return (lResults)
     lResults <- .dichotMinSplit(lResults,
-                    unname(unlist(c_gene_split[2])), exprs,
+                    unname(unlist(cGeneSplit[2])), exprs,
                     genes, clusters, target, classifier,
                     advMethod, advFixedValue,
                     advFct, maxSplitSize, changeType,returnFirstFound,
@@ -218,87 +225,89 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
 
 .maxOverListModifs <- function(exprs, clusters, classifier, exclGenes,
                             genes, modifications, maxSplitSize, verbose){
-    df_result <- data.frame(todel = unique(clusters))
-    rownames(df_result) <- unique(clusters)
-    df_names <- c()
-    for (modif_ind in seq_len(length(modifications))) {
-        mod1 <- modifications[[modif_ind]][[1]]
-        attacks_length <- c()
-        for (cell_type in unique(clusters)) {
+    dfResult <- data.frame(todel = unique(clusters))
+    rownames(dfResult) <- unique(clusters)
+    dfNames <- unlist(lapply(seq_along(modifications), function(modifInd){
+        paste(modifications[[modifInd]], collapse = "_")
+    }))
+    vecsAttacksLength <- lapply(seq_along(modifications), function(modifInd){
+        mod1 <- modifications[[modifInd]][[1]]
+        attacksLength <- unname(vapply(unique(clusters), function(cellType){
             if (verbose) {
                 message(paste0("Running maxChange attack on ",
-                    cell_type, ", with a maxSplitSize of: ", maxSplitSize))
+                    cellType, ", with a maxSplitSize of: ", maxSplitSize))
                 message(paste0("The smaller the maxSplitSize,",
                         " the more precise the result will be,",
                         " but it will take longer."))
                 message("Modification: ",
-                    paste(modifications[[modif_ind]], collapse = " "))
+                    paste(modifications[[modifInd]], collapse = " "))
             }
-            if (length(modifications[[modif_ind]]) == 1) {
-                max_change_genes <- advMaxChange(exprs, clusters, cell_type,
+            if (length(modifications[[modifInd]]) == 1) {
+                maxChangeGenes <- advMaxChange(exprs, clusters, cellType,
                     classifier, advMethod = mod1,
                     maxSplitSize = maxSplitSize, exclGenes = exclGenes,
                     genes = genes, verbose = verbose)
             } else {
-                mod2 <- modifications[[modif_ind]][[2]]
-                max_change_genes <- advMaxChange(exprs, clusters,
-                    cell_type, classifier, advMethod = mod1,
+                mod2 <- modifications[[modifInd]][[2]]
+                maxChangeGenes <- advMaxChange(exprs, clusters,
+                    cellType, classifier, advMethod = mod1,
                     advFixedValue = mod2, advFct = mod2,
                     maxSplitSize = maxSplitSize, exclGenes = exclGenes,
                     genes = genes, verbose = verbose)
             }
-            result_length <- length(max_change_genes)
-            attacks_length <- c(attacks_length, result_length)
+            resultLength <- length(maxChangeGenes)
             if (verbose) {
-                message(paste0("At least ", result_length,
+                message(paste0("At least ", resultLength,
                     " genes can be modified with the ",
-                    paste(modifications[[modif_ind]], collapse = " "),
+                    paste(modifications[[modifInd]], collapse = " "),
                     " method, and the cluster will still",
-                    " be classified as ", cell_type))
+                    " be classified as ", cellType))
             }
-        }
-        df_names <- c(df_names, paste(modifications[[modif_ind]],
-            collapse = "_"))
-        df_result <- cbind(df_result, attacks_length)
-        df_result$todel <- NULL
-        colnames(df_result) <- df_names
-    }
-    df_result
+            return(resultLength)
+        }, numeric(1)))
+        return(attacksLength)
+    })
+
+    dfResult <- do.call(cbind, list(dfResult, vecsAttacksLength))
+
+    dfResult$todel <- NULL
+    colnames(dfResult) <- dfNames
+    dfResult
 }
 
 .maxOverArgModifs <- function(exprs, clusters, classifier, exclGenes,
                             genes, advMethod, advFixedValue,
                             advFct, maxSplitSize, verbose){
-    attacks_length <- vapply(unique(clusters), function(cell_type){
+    attacksLength <- vapply(unique(clusters), function(cellType){
         if (verbose) {
             message(paste0(
                 "Running maxChange attack on ",
-                cell_type, ", with a maxSplitSize of: ", maxSplitSize
+                cellType, ", with a maxSplitSize of: ", maxSplitSize
             ))
             message(paste0("The smaller the maxSplitSize, the more",
                 " precise the result will be, but it will take longer."))
         }
-        max_change_genes <- advMaxChange(exprs, clusters, cell_type,
+        maxChangeGenes <- advMaxChange(exprs, clusters, cellType,
             classifier, advMethod = advMethod,
             advFixedValue = advFixedValue, advFct = advFct,
             maxSplitSize = maxSplitSize, exclGenes = exclGenes,
             genes = genes, verbose = verbose
         )
-        result_length <- length(max_change_genes)
+        resultLength <- length(maxChangeGenes)
         if (verbose) {
             message(paste0(
-                "At least ", result_length,
+                "At least ", resultLength,
                 " genes can be modified with the ", advMethod,
                 " method, and the cluster will still be classified as ",
-                cell_type
+                cellType
             ))
         }
-        return(result_length)
+        return(resultLength)
     }, numeric(1))
-    names(attacks_length) <- unique(clusters)
-    df_result <- data.frame(at_least_gene_number = unlist(attacks_length))
-    rownames(df_result) <- names(attacks_length)
-    df_result
+    names(attacksLength) <- unique(clusters)
+    dfResult <- data.frame(atLeastGeneNumber = unlist(attacksLength))
+    rownames(dfResult) <- names(attacksLength)
+    dfResult
 }
 
 

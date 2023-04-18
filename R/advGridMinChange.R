@@ -23,11 +23,22 @@
 #' my_modifications = list(c("perc1"),
 #'                         c("fixed", 1000),
 #'                         c("full_matrix_fct", myFct))
-#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' @param exprs a matrix or a data.frame of numeric RNA expression,
 #' cells are rows and genes are columns.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
-#' @param classifier a classifier in the suitable format
+#' @param classifier a classifier in the suitable format.
+#' A classifier function should be formated as follow:
+#' classifier = function(expr, clusters, target){
+#'      # Making the classification
+#'      c("cell type", score)
+#' }
+#' `score` should be numeric between 0 and 1, 1 being the highest confidance
+#' into the cell type classification.
+#' The matrix `expr` contains RNA expression values, the vector `clusters`
+#' consists of the cluster IDs for each cell in `expr`, and `target` is the
+#' ID of the cluster for which we want to have a classification.
+#' The function returns a vector with the classification result, and a score.
 #' @param genes the character vector of genes to study
 #' @param modifications the list of the modifications to study
 #' @param returnFirstFound set to TRUE to return result when a
@@ -35,7 +46,7 @@
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @param iamsure logical, prevents from expansive calculations
 #' when `genes` list is too long, set to `TRUE` to run anyway.
-#' @return data.frame results of the classification of all the grid combinations
+#' @return DataFrame results of the classification of all the grid combinations
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
@@ -63,8 +74,8 @@
 advGridMinChange <- function(exprs, clusters, target, classifier,
                 genes, modifications = list(c("perc1"), c("perc99")),
                 returnFirstFound = FALSE, verbose = FALSE, iamsure = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
-        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
+        stop("The argument exprs must be a matrix or a data.frame.")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -90,274 +101,50 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     if (!is.logical(iamsure)){
         stop("The argument iamsure must be logical.")
     }
-    if (is(exprs, "DFrame")){
-        exprs <- as.data.frame(exprs)
-    }
 
-    function_results <- data.frame(matrix(ncol = length(genes) + 5, nrow = 0))
-    colnames(function_results) <- c("prediction", "odd", "genes_modified",
-        "type_modified", "iteration", genes)
+    functionResults <- data.frame(matrix(ncol = length(genes) + 5, nrow = 0))
+    colnames(functionResults) <- c("prediction", "odd", "genesModified",
+        "typeModified", "iteration", genes)
     if (.gridWarning(modifications, genes, iamsure))
-        return(function_results)
-    tests_grid <- gtools::permutations(n = length(modifications) + 1,
+        return(functionResults)
+    testsGrid <- gtools::permutations(n = length(modifications) + 1,
         r = length(genes), repeats.allowed = TRUE)
     results <- data.frame(matrix(ncol = length(genes) + 2, nrow = 0))
     colnames(results) <- c(genes, "prediction", "odd"); i <- 1
-    while (i <= nrow(tests_grid)) {
-        message("Running combination: ", i, " on ", nrow(tests_grid))
-        exprs_temp <- exprs; row_results <- c()
-        for (gene_ind in seq_len(length(genes))) {
-            modif_ind <- tests_grid[i, gene_ind]
-            if (modif_ind != length(modifications) + 1) {
-                mod1 <- modifications[[modif_ind]][[1]]
-                if (length(modifications[[modif_ind]]) == 1) {
-                    exprs_temp <- advModifications(exprs_temp, genes[gene_ind],
+    while (i <= nrow(testsGrid)) {
+        message("Running combination: ", i, " on ", nrow(testsGrid))
+        exprsTemp <- exprs; rowResults <- c()
+        for (geneInd in seq_along(genes)) {
+            modifInd <- testsGrid[i, geneInd]
+            if (modifInd != length(modifications) + 1) {
+                mod1 <- modifications[[modifInd]][[1]]
+                if (length(modifications[[modifInd]]) == 1) {
+                    exprsTemp <- advModifications(exprsTemp, genes[geneInd],
                         clusters, target, advMethod = mod1, verbose = verbose)
-                } else { mod2 <- modifications[[modif_ind]][[2]]
-                    exprs_temp <- advModifications(exprs_temp, genes[gene_ind],
+                } else {
+                    mod2 <- modifications[[modifInd]][[2]]
+                    exprsTemp <- advModifications(exprsTemp, genes[geneInd],
                         clusters, target, advMethod = mod1, advFct = mod2,
                         advFixedValue = mod2, verbose = verbose)}
-                row_results <- c(row_results,
-                    paste(modifications[[modif_ind]], collapse = " "))
-            } else { row_results <- c(row_results, "NA")}
+                    rowResults <- c(rowResults,
+                        paste(modifications[[modifInd]], collapse = " "))
+            } else { rowResults <- c(rowResults, "NA")}
         }
-        class_results <- classifier(exprs_temp, clusters, target)
-        row_results <- c(row_results, class_results[1], class_results[2])
-        results <- rbind(results, row_results)
+        classResults <- classifier(exprsTemp, clusters, target)
+        rowResults <- c(rowResults, classResults[1], classResults[2])
+        results <- rbind(results, rowResults)
         colnames(results) <- c(genes, "prediction", "odd")
-        ifelse(class_results[1] == target, i <- i + 1, i <- nrow(tests_grid)+1)
+        ifelse(classResults[1] == target, i <- i + 1, i <- nrow(testsGrid)+1)
     }
-    results$genes_modified <-
+    results$genesModified <-
         length(genes) - apply(results, 1, function(x) sum(x == "NA"))
-    results$type_modified <- results$prediction != target
+    results$typeModified <- results$prediction != target
     results <- results[, c( "prediction", "odd",
-            "genes_modified", "type_modified", genes)]
-    function_results <- rbind(results, function_results)
-    function_results <-
-        function_results[order(as.numeric(function_results$genes_modified)), ]
-    function_results <- function_results[order(function_results$type_modified,
+            "genesModified", "typeModified", genes)]
+    functionResults <- rbind(results, functionResults)
+    functionResults <-
+        functionResults[order(as.numeric(functionResults$genesModified)), ]
+    functionResults <- functionResults[order(functionResults$typeModified,
             decreasing = TRUE), ]
-    function_results
-}
-
-.randWalkTryNewVector <- function(exprs, genes, newWalkParams, modifications,
-        clusters, target, classifier, bestAttackParams, i,
-        function_results, changeType, verbose){
-    exprs_temp <- exprs
-    row_results <- c()
-    rowResultsInt <- c()
-    # Try the new params
-    for (gene_ind in seq_len(length(genes))) {
-        modif_ind <- as.numeric(newWalkParams[gene_ind])
-        if (modif_ind != length(modifications) + 1) {
-            mod1 <- modifications[[modif_ind]][[1]]
-            if (length(modifications[[modif_ind]]) == 1) {
-                exprs_temp <- advModifications(exprs_temp,
-                    genes[gene_ind], clusters, target,
-                    advMethod = mod1, verbose = verbose)
-            } else {
-                mod2 <- modifications[[modif_ind]][[2]]
-                exprs_temp <- advModifications(exprs_temp, genes[gene_ind],
-                    clusters, target, advMethod = mod1,
-                    advFixedValue = mod2, advFct = mod2,
-                    verbose = verbose)
-            }
-            row_results <- c(row_results, paste(modifications[[modif_ind]],
-                        collapse = " "))
-            rowResultsInt <- c(rowResultsInt, modif_ind)
-        } else {
-            row_results <- c(row_results, "NA")
-            rowResultsInt <- c(rowResultsInt, modif_ind)
-        }
-    }
-    genes_modified <- length(genes) - sum(row_results == "NA")
-    previous_genes_modified <- length(genes) -
-        sum(bestAttackParams == (length(modifications) + 1))
-    class_results <- classifier(exprs_temp, clusters, target)
-    type_modified <- class_results[1] != target
-    if ( changeType == "not_na")
-        type_modified <- (class_results[1] != target) &&
-            class_results[1] != "NA"
-    if (type_modified && genes_modified <= previous_genes_modified) {
-        bestAttackParams <- rowResultsInt
-        message( "Better attack with only ", genes_modified,
-            " genes modified")
-    }
-    row_results <- c(class_results[1], class_results[2],
-        genes_modified, type_modified, (i + 1), row_results)
-    function_results <- rbind(row_results, function_results)
-    function_results
-}
-
-.randWalkNewVector <- function(previousStrComb, modifications,
-    bestAttackParams, stepChangeRatio, whileMaxCount, function_results){
-    newWalkParams <- c()
-    new_walk_step <- -1
-    kill_count <- 0
-    while (new_walk_step %in% previousStrComb ||
-        length(newWalkParams[
-            newWalkParams != (length(modifications) + 1)
-        ]) >=
-            length(bestAttackParams[bestAttackParams !=
-                (length(modifications) + 1)])) {
-        newWalkParams <- c()
-        for (param in bestAttackParams) {
-            if (param != length(modifications) + 1) {
-                if (sample(seq_len(round(1 / stepChangeRatio)), 1) == 1) {
-                    newWalkParams <- c( newWalkParams,
-                        sample(seq_len(length(modifications) + 1), 1))
-                } else {
-                    newWalkParams <- c(newWalkParams, param)
-                }
-            } else {
-                if (sample(seq_len(round(sum(newWalkParams ==
-                    (length(modifications) + 1))^(1 / 2) /
-                    stepChangeRatio)), 1) == 1) {
-                    newWalkParams <- c( newWalkParams,
-                        sample(seq_len(length(modifications) + 1), 1))
-                } else {
-                    newWalkParams <- c(newWalkParams, param)
-                }
-            }
-        }
-        new_walk_step <- paste(newWalkParams, collapse = " ")
-        # If inifite loop kill function and return results
-        if (kill_count > whileMaxCount) {
-            function_results <- function_results[order(
-                    as.numeric(function_results$genes_modified)), ]
-            function_results <- function_results[order(
-                function_results$type_modified, decreasing = TRUE), ]
-            message("Inifite loop, kill function and return results")
-            return(list(FALSE, function_results))
-        }
-        kill_count <- kill_count + 1
-    }
-    return(list(TRUE, newWalkParams, new_walk_step))
-}
-
-.randWalkBeforeWalk <- function(exprs, genes, modifications,
-            clusters, target, classifier, firstBatch, verbose){
-    init_objs <- .initRandWalk(modifications, genes, firstBatch)
-    previousStrComb <- init_objs[[1]]; tests_grid <- init_objs[[2]]
-    function_results <- init_objs[[3]]; functionResultsInt <- init_objs[[4]]
-    results <- init_objs[[5]]; resultsInt <- init_objs[[6]]
-    rw_seed <- .randWalkGetSeed(tests_grid, exprs, genes, modifications,
-        clusters, target, classifier, results, resultsInt,
-        previousStrComb, verbose)
-    results <- rw_seed[[1]]; resultsInt <- rw_seed[[2]]
-    previousStrComb <- rw_seed[[3]]
-
-    results$genes_modified <-
-        length(genes) - apply(results, 1, function(x) sum(x == "NA"))
-    results$type_modified <- results$prediction != target
-    results$iteration <- 1
-    results <- results[, c("prediction", "odd", "genes_modified",
-            "type_modified", "iteration", genes)]
-    resultsInt$genes_modified <- length(genes) - apply( resultsInt, 1,
-                        function(x) sum(x == (length(modifications) + 1)))
-    resultsInt$type_modified <- resultsInt$prediction != target
-    resultsInt$iteration <- 1
-    resultsInt <- resultsInt[, c("prediction", "odd", "genes_modified",
-        "type_modified", "iteration", genes)]
-    function_results <- rbind(results, function_results)
-    function_results <-
-        function_results[order(function_results$genes_modified), ]
-    function_results <- function_results[order(function_results$type_modified,
-            decreasing = TRUE), ]
-    functionResultsInt <- rbind(resultsInt, functionResultsInt)
-    functionResultsInt <-
-        functionResultsInt[order(functionResultsInt$genes_modified), ]
-    functionResultsInt <- functionResultsInt[
-        order(functionResultsInt$type_modified, decreasing = TRUE), ]
-    bestAttackParams <- functionResultsInt[1, 6:ncol(functionResultsInt)]
-    list(previousStrComb, function_results, bestAttackParams)
-}
-
-.randWalkGetSeed <- function(tests_grid, exprs, genes, modifications, clusters,
-    target, classifier, results, resultsInt, previousStrComb, verbose){
-    i<- 1; newPreviousStrComb <- c()
-    while (i <= nrow(tests_grid)) {
-        message("Running first batch to determine walk seed: ",
-            i, " on ", nrow(tests_grid))
-        exprs_temp <- exprs
-        newPreviousStrComb <- c(newPreviousStrComb, previousStrComb[i])
-        row_results <- c()
-        rowResultsInt <- c()
-        for (gene_ind in seq_len(length(genes))) {
-            modif_ind <- tests_grid[i, gene_ind]
-            if (modif_ind != length(modifications) + 1) {
-                mod1 <- modifications[[modif_ind]][[1]]
-                if (length(modifications[[modif_ind]]) == 1) {
-                    exprs_temp <- advModifications(exprs_temp,
-                        genes[gene_ind], clusters, target,
-                        advMethod = mod1, verbose = verbose)
-                } else {
-                    mod2 <- modifications[[modif_ind]][[2]]
-                    exprs_temp <- advModifications(exprs_temp,
-                        genes[gene_ind], clusters, target,
-                        advMethod = mod1,advFixedValue = mod2,
-                        advFct = mod2, verbose = verbose)
-                }
-                row_results <- c( row_results,
-                    paste(modifications[[modif_ind]], collapse = " "))
-                rowResultsInt <- c(rowResultsInt, modif_ind)
-            } else {
-                row_results <- c(row_results, "NA")
-                rowResultsInt <- c(rowResultsInt, modif_ind)
-            }
-        }
-        class_results <- classifier(exprs_temp, clusters, target)
-        row_results <- c(row_results, class_results[1], class_results[2])
-        rowResultsInt <- c(unlist(rowResultsInt),
-                    class_results[1], class_results[2])
-        results <- rbind(results, row_results)
-        resultsInt <- rbind(resultsInt, rowResultsInt)
-        colnames(results) <- c(genes, "prediction", "odd")
-        colnames(resultsInt) <- c(genes, "prediction", "odd")
-        if (class_results[1] == target) {
-            i <- i + 1
-        } else {
-            i <- nrow(tests_grid) + 1
-        }
-    }
-    list(results, resultsInt, newPreviousStrComb)
-}
-
-.initRandWalk <- function(modifications, genes, firstBatch){
-    previousStrComb <- c(-1)
-    if ((length(modifications) + 1)^length(genes) > firstBatch) {
-        tests_grid <- data.frame(matrix(ncol = length(genes), nrow = 0))
-        while (nrow(tests_grid) < (firstBatch - length(modifications))) {
-            rand_sample <- sample(seq_len(length(modifications) + 1),
-                length(genes),
-                replace = TRUE
-            )
-            str_rand_sample <- paste(rand_sample, collapse = " ")
-            if (!str_rand_sample %in% previousStrComb) {
-                tests_grid <- rbind(tests_grid, rand_sample)
-            }
-            previousStrComb <- c(previousStrComb, str_rand_sample)
-        }
-        for (i in seq_len(length(modifications))) {
-            tests_grid <- rbind(rep(i, length(genes)), tests_grid)
-        }
-        tests_grid <- as.matrix(tests_grid)
-    } else {
-        tests_grid <- gtools::permutations(n = length(modifications) + 1,
-            r = length(genes), repeats.allowed = TRUE)
-    }
-    function_results <- data.frame(matrix(ncol = length(genes) + 5, nrow = 0))
-    colnames(function_results) <- c("prediction", "odd", "genes_modified",
-        "type_modified", "iteration", genes)
-    functionResultsInt <- data.frame(
-        matrix(ncol = length(genes) + 5, nrow = 0)
-    )
-    colnames(functionResultsInt) <- c( "prediction", "odd",
-        "genes_modified", "type_modified", "iteration", genes)
-    results <- data.frame(matrix(ncol = length(genes) + 2, nrow = 0))
-    colnames(results) <- c(genes, "prediction", "odd")
-    resultsInt <- data.frame(matrix(ncol = length(genes) + 2, nrow = 0))
-    colnames(resultsInt) <- c(genes, "prediction", "odd")
-    return (list(previousStrComb, tests_grid, function_results,
-        functionResultsInt, results, resultsInt))
+    S4Vectors::DataFrame(functionResults)
 }

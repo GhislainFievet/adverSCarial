@@ -5,7 +5,7 @@
 #' classifier. It looks at the average value of a few genes
 #' inside a cluster, and returns the associated cell type.
 #' Markers where found by differential expressions.
-#' @param expr a matrix, a data.frame or a DataFrame of numeric
+#' @param expr a matrix or a data.frame of numeric
 #' RNA expression, cells are rows and genes are columns.
 #' @param clusters vector of clusters to which each cell belongs
 #' @param target name of the cell cluster to classify
@@ -25,17 +25,14 @@
 #'
 #' @export
 MClassifier <- function(expr, clusters, target) {
-    if ( !is(expr, 'matrix') && !is(expr,'data.frame') && !is(expr,"DFrame")){
-        stop("The argument expr must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(expr, 'matrix') && !is(expr,'data.frame')){
+        stop("The argument expr must be a matrix or a data.frame.")
     }
     if (!is(target,"character")) {
         stop("The argument target must be character.")
     }
     if (!is(clusters,"character")) {
         stop("The argument clusters must be a vector of character.")
-    }
-    if (is(expr, "DFrame")){
-        expr <- as.data.frame(expr)
     }
     if (mean(expr[clusters == target, "LTB"]) > 7) {
         return(c("Memory CD4 T", 1))
@@ -72,16 +69,4 @@ MClassifier <- function(expr, clusters, target) {
     c("UNDETERMINED", 1)
 }
 
-.get_unique_index <- function(cArray) {
-    c_prev <- c()
-    c_result <- c()
-    for (i in seq_len(length(cArray))) {
-        if (!is.na(cArray[i])) {
-            if (!cArray[i] %in% c_prev) {
-                c_result <- c(c_result, i)
-                c_prev <- c(c_prev, cArray[i])
-            }
-        }
-    }
-    c_result
-}
+

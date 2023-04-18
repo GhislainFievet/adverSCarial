@@ -28,10 +28,21 @@
 #' 
 #' The function returns a dataframe with the number of genes of the max
 #' change attack for each modification in columns, for each cell type in rows.
-#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' @param exprs a matrix or a data.frame of numeric RNA expression,
 #' cells are rows and genes are columns.
 #' @param clusters a character vector of the clusters to which the cells belong
-#' @param classifier a classifier in the suitable format
+#' @param classifier a classifier in the suitable format.
+#' A classifier function should be formated as follow:
+#' classifier = function(expr, clusters, target){
+#'      # Making the classification
+#'      c("cell type", score)
+#' }
+#' `score` should be numeric between 0 and 1, 1 being the highest confidance
+#' into the cell type classification.
+#' The matrix `expr` contains RNA expression values, the vector `clusters`
+#' consists of the cluster IDs for each cell in `expr`, and `target` is the
+#' ID of the cluster for which we want to have a classification.
+#' The function returns a vector with the classification result, and a score.
 #' @param exclGenes a character vector of genes to exclude from the analysis
 #' @param genes a character vector of genes in case you want to limit the
 #' analysis on a subset of genes
@@ -48,8 +59,8 @@
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
 #' @param verbose logical, set to TRUE to activate verbose mode
-#' @return a data.frame storing the number of min change attack 
-#' possible for each cell type and each modification.
+#' @return a DataFrame storing the number of possible min change
+#' attacks each cell type and each modification.
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
@@ -78,8 +89,8 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             advMethod = "perc99", advFixedValue = 3, advFct = NULL,
             firstDichot = 100, maxSplitSize = 100, changeType = "any",
             verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
-        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
+        stop("The argument exprs must be a matrix or a data.frame.")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -111,20 +122,17 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if (is(exprs, "DFrame")){
-        exprs <- as.data.frame(exprs)
-    }
 
     if (length(modifications) == 0) {
-        df_result <- .minOverArgModifs(exprs, clusters, classifier, exclGenes,
+        dfResult <- .minOverArgModifs(exprs, clusters, classifier, exclGenes,
                             genes, advMethod, advFixedValue, advFct,
                             firstDichot, maxSplitSize, changeType, verbose)
     } else {
-        df_result <- .minOverListModifs(exprs, clusters, classifier, exclGenes,
+        dfResult <- .minOverListModifs(exprs, clusters, classifier, exclGenes,
                             genes, modifications, firstDichot, maxSplitSize,
                             changeType, verbose)
     }
-    df_result
+    S4Vectors::DataFrame(dfResult)
 }
 
 .gridWarning <- function(modifications, genes, iamsure){

@@ -20,14 +20,25 @@ advRandWalkMinChange(
 )
 }
 \arguments{
-\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
+\item{exprs}{a matrix or a data.frame of numeric RNA expression,
 cells are rows and genes are columns.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
 \item{target}{the name of the cluster to modify}
 
-\item{classifier}{a classifier in the suitable format}
+\item{classifier}{a classifier in the suitable format.
+A classifier function should be formated as follow:
+classifier = function(expr, clusters, target){
+# Making the classification
+c("cell type", score)
+}
+\code{score} should be numeric between 0 and 1, 1 being the highest confidance
+into the cell type classification.
+The matrix \code{expr} contains RNA expression values, the vector \code{clusters}
+consists of the cluster IDs for each cell in \code{expr}, and \code{target} is the
+ID of the cluster for which we want to have a classification.
+The function returns a vector with the classification result, and a score.}
 
 \item{genes}{the character vector of genes to study}
 
@@ -48,7 +59,7 @@ for new combination of parameters}
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
-data.frame results of the classification of all the grid combinations
+DataFrame results of the classification of all the grid combinations
 }
 \description{
 Random walk search of min change adversarial attack.

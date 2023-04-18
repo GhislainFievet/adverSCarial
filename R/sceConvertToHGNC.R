@@ -15,7 +15,7 @@ sceConvertToHGNC <- function(sce){
     if ( !is(sce,'SingleCellExperiment')){
         stop("The argument sce must be a SingleCellExperiment.")
     }
-    mat_sce <- matrixFromSCE(sce)
-    SingleCellExperiment(assays = list(counts = t(mat_sce)),
+    matSce <- matrixFromSCE(sce)
+    SingleCellExperiment(assays = list(counts = t(matSce)),
         colData = colData(sce))
 }

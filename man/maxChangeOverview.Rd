@@ -20,12 +20,23 @@ maxChangeOverview(
 )
 }
 \arguments{
-\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
+\item{exprs}{a matrix or a data.frame of numeric RNA expression,
 cells are rows and genes are columns.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
-\item{classifier}{a classifier in the suitable format}
+\item{classifier}{a classifier in the suitable format.
+A classifier function should be formated as follow:
+classifier = function(expr, clusters, target){
+# Making the classification
+c("cell type", score)
+}
+\code{score} should be numeric between 0 and 1, 1 being the highest confidance
+into the cell type classification.
+The matrix \code{expr} contains RNA expression values, the vector \code{clusters}
+consists of the cluster IDs for each cell in \code{expr}, and \code{target} is the
+ID of the cluster for which we want to have a classification.
+The function returns a vector with the classification result, and a score.}
 
 \item{exclGenes}{a character vector of genes to exclude from the analysis}
 
@@ -48,7 +59,8 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
-a list of genes/new classification tuples
+a DataFrame storing the number of possible max change attacks
+for each cell type and each modification.
 }
 \description{
 Gives an overview of the susceptibility to max change

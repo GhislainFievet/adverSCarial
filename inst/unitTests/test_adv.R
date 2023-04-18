@@ -55,13 +55,13 @@ test_advMinChange <- function(){
 test_maxChangeOverview <- function(){
     exprs <- data.frame(a=c(0,0,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     clusters <- c("b","b","t","t")
-    checkTrue(sum(maxChangeOverview(exprs, clusters, MyClassifier))==6)
+    checkTrue(all(dim(maxChangeOverview(exprs, clusters, MyClassifier))==c(2,2)))
 }
 
 test_minChangeOverview <- function(){
     exprs <- data.frame(a=c(0,0,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     clusters <- c("b","b","t","t")
-    checkTrue(sum(minChangeOverview(exprs, clusters, MyClassifier))==6)
+    checkTrue(all(dim(minChangeOverview(exprs, clusters, MyClassifier)))==c(2,2))
 }
 
 test_advGridMinChange <- function(){

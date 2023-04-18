@@ -17,7 +17,7 @@ advModifications(
 )
 }
 \arguments{
-\item{exprs}{a matrix, a data.frame or a DataFrame of numeric RNA expression,
+\item{exprs}{a matrix or a data.frame of numeric RNA expression,
 cells are rows and genes are columns.}
 
 \item{genes}{the character vector of genes to modify}
@@ -38,7 +38,7 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
-the matrix or a dataframe exprs modified on asked genes
+the matrix or a data.frame exprs modified on asked genes
 with the specified modification
 }
 \description{

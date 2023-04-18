@@ -30,7 +30,7 @@
 #' - 'target_matrix_fct' indicate that the 'advFct' function takes target cells
 #'  all genes values as input.
 #' 
-#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' @param exprs a matrix or a data.frame of numeric RNA expression,
 #' cells are rows and genes are columns.
 #' @param genes the character vector of genes to modify
 #' @param clusters a character vector of the clusters to which the cells belong
@@ -42,7 +42,7 @@
 #' belongs to the following list: `full_row_fct`, `target_row_fct`,
 #' `target_matrix_fct`, `full_matrix_fct`
 #' @param verbose logical, set to TRUE to activate verbose mode
-#' @return the matrix or a dataframe exprs modified on asked genes
+#' @return the matrix or a data.frame exprs modified on asked genes
 #' with the specified modification
 #' @examples
 #' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
@@ -57,8 +57,8 @@ advModifications <- function(exprs, genes, clusters,
                             target, advMethod = "perc99",
                             advFixedValue = 3, advFct = NULL,
                             verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
-        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
+        stop("The argument exprs must be a matrix or a data.frame.")
     }
     if (!is.character(genes)) {
         stop("The argument genes must be character or vector of character.")
@@ -80,9 +80,6 @@ advModifications <- function(exprs, genes, clusters,
         message("Modify data for ", length(genes),
             " genes for cluster ", target)
     }
-    if (is(exprs, "DFrame")){
-        exprs <- as.data.frame(exprs)
-    }
 
     if (!is.function(advFct)) {
         exprs <- .advModificationsNotFunction(exprs,
@@ -102,31 +99,31 @@ advModifications <- function(exprs, genes, clusters,
                             genes, clusters,
                             target, advMethod = "perc99",
                             advFixedValue = 3) {
-        cell_mask <- clusters == target
+        cellMask <- clusters == target
         if (advMethod == "fixed") {
-            num_genes <- c()
-            for (my_gene in unique(genes)) {
-                if (is(exprs[, my_gene], "numeric")) {
-                    num_genes <- append(num_genes, my_gene)
+            numGenes <- c()
+            for (myGene in unique(genes)) {
+                if (is(exprs[, myGene], "numeric")) {
+                    numGenes <- append(numGenes, myGene)
                 }
             }
-            exprs[cell_mask, num_genes] <- advFixedValue
+            exprs[cellMask, numGenes] <- advFixedValue
         }
         if (advMethod == "perc99") {
-            for (my_gene in unique(genes)) {
-                if (is(exprs[, my_gene], "numeric")) {
-                    exprs[cell_mask, my_gene] <- stats::quantile(
-                        exprs[, my_gene],
+            for (myGene in unique(genes)) {
+                if (is(exprs[, myGene], "numeric")) {
+                    exprs[cellMask, myGene] <- stats::quantile(
+                        exprs[, myGene],
                         0.99
                     )
                 }
             }
         }
         if (advMethod == "perc1") {
-            for (my_gene in unique(genes)) {
-                if (is(exprs[, my_gene], "numeric")) {
-                    exprs[cell_mask, my_gene] <- stats::quantile(
-                        exprs[, my_gene],
+            for (myGene in unique(genes)) {
+                if (is(exprs[, myGene], "numeric")) {
+                    exprs[cellMask, myGene] <- stats::quantile(
+                        exprs[, myGene],
                         0.01
                     )
                 }
@@ -138,43 +135,43 @@ advModifications <- function(exprs, genes, clusters,
 .advModificationsFunction <- function(exprs, genes, clusters,
                             target, advMethod = "perc99",
                             advFct = NULL) {
-        cell_mask <- clusters == target
+        cellMask <- clusters == target
         if (advMethod == "full_row_fct" || advMethod == "fixed") {
-            for (my_gene in unique(genes)) {
-                if (is(exprs[, my_gene], "numeric")) {
-                    exprs[cell_mask, my_gene] <- advFct(exprs[, my_gene])
+            for (myGene in unique(genes)) {
+                if (is(exprs[, myGene], "numeric")) {
+                    exprs[cellMask, myGene] <- advFct(exprs[, myGene])
                 }
             }
         }
         if (advMethod == "target_row_fct" || advMethod == "fixed") {
-            for (my_gene in unique(genes)) {
-                if (is(exprs[, my_gene], "numeric")) {
-                    exprs[cell_mask, my_gene] <- advFct(exprs[
-                        cell_mask,
-                        my_gene
+            for (myGene in unique(genes)) {
+                if (is(exprs[, myGene], "numeric")) {
+                    exprs[cellMask, myGene] <- advFct(exprs[
+                        cellMask,
+                        myGene
                     ])
                 }
             }
         }
         if (advMethod == "target_matrix_fct") {
-            num_genes <- unlist(lapply(unique(genes),function(my_gene){
-                if (is(exprs[, my_gene], "numeric")) {
-                    return(my_gene)
+            numGenes <- unlist(lapply(unique(genes),function(myGene){
+                if (is(exprs[, myGene], "numeric")) {
+                    return(myGene)
                 } else {
                     return(NULL)
                 }
             }))
-            exprs[cell_mask, num_genes] <- advFct(exprs[cell_mask, num_genes])
+            exprs[cellMask, numGenes] <- advFct(exprs[cellMask, numGenes])
         }
         if (advMethod == "full_matrix_fct") {
-            num_genes <- unlist(lapply(unique(genes),function(my_gene){
-                if (is(exprs[, my_gene], "numeric")) {
-                    return(my_gene)
+            numGenes <- unlist(lapply(unique(genes),function(myGene){
+                if (is(exprs[, myGene], "numeric")) {
+                    return(myGene)
                 } else {
                     return(NULL)
                 }
             }))
-            exprs[cell_mask, num_genes] <- advFct(exprs[, num_genes])
+            exprs[cellMask, numGenes] <- advFct(exprs[, numGenes])
         }
     exprs
 }

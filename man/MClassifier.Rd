@@ -7,7 +7,7 @@
 MClassifier(expr, clusters, target)
 }
 \arguments{
-\item{expr}{a matrix, a data.frame or a DataFrame of numeric
+\item{expr}{a matrix or a data.frame of numeric
 RNA expression, cells are rows and genes are columns.}
 
 \item{clusters}{vector of clusters to which each cell belongs}

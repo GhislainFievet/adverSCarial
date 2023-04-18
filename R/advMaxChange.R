@@ -27,11 +27,22 @@
 #' to have the maximum number of genes for the max change attack. This function
 #' is used by the 'overMaxChange' function with a default argument value of 100
 #' to increase speed, and still returns significant results.
-#' @param exprs a matrix, a data.frame or a DataFrame of numeric RNA expression,
+#' @param exprs a matrix or a data.frame of numeric RNA expression,
 #' cells are rows and genes are columns.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
-#' @param classifier a classifier in the suitable format
+#' @param classifier a classifier in the suitable format.
+#' A classifier function should be formated as follow:
+#' classifier = function(expr, clusters, target){
+#'      # Making the classification
+#'      c("cell type", score)
+#' }
+#' `score` should be numeric between 0 and 1, 1 being the highest confidance
+#' into the cell type classification.
+#' The matrix `expr` contains RNA expression values, the vector `clusters`
+#' consists of the cluster IDs for each cell in `expr`, and `target` is the
+#' ID of the cluster for which we want to have a classification.
+#' The function returns a vector with the classification result, and a score.
 #' @param exclGenes a list of genes to exclude from the analysis
 #' @param genes a list of genes in case you want to limit the
 #' attack on a subset of genes
@@ -61,8 +72,8 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                         exclGenes = c(), genes = c(), advMethod = "perc99",
                         advFixedValue = 3, advFct = NULL,
                         maxSplitSize = 1, verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,"DFrame")){
-        stop("The argument exprs must be a matrix, a data.frame or a DataFrame.")
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
+        stop("The argument exprs must be a matrix or a data.frame")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -88,27 +99,24 @@ advMaxChange <- function(exprs, clusters, target, classifier,
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
-    if (is(exprs, "DFrame")){
-        exprs <- as.data.frame(exprs)
-    }
 
     if (maxSplitSize < 1){ maxSplitSize <- 1 }
-    genes_to_keep <- unlist(lapply(unique(genes), function(str_gene){
-        if (!is.na(match(str_gene, colnames(exprs)))) {
-            return(str_gene)
+    genesToKeep <- unlist(lapply(unique(genes), function(strGene){
+        if (!is.na(match(strGene, colnames(exprs)))) {
+            return(strGene)
         } else {
             return(NULL)
         }
     }))
     if (length(genes) == 0) {
-        genes_to_keep <- colnames(exprs)
+        genesToKeep <- colnames(exprs)
     }
-    for (str_gene in unique(exclGenes)) {
-        if (!is.na(match(str_gene, genes_to_keep))) {
-            genes_to_keep <- genes_to_keep[-match(str_gene, genes_to_keep)]
+    for (strGene in unique(exclGenes)) {
+        if (!is.na(match(strGene, genesToKeep))) {
+            genesToKeep <- genesToKeep[-match(strGene, genesToKeep)]
         }
     }
-    lResults <- .predictionDichotMaxChange(exprs, genes_to_keep,
+    lResults <- .predictionDichotMaxChange(exprs, genesToKeep,
         clusters, target, classifier,
         advMethod = advMethod,
         advFixedValue = advFixedValue, advFct = advFct,
@@ -120,29 +128,29 @@ advMaxChange <- function(exprs, clusters, target, classifier,
 .dichotMaxSameType <- function(lResults, cGeneSplitValue, exprs,
                 clusters, target, classifier, advMethod,
                 advFixedValue, advFct, maxSplitSize, verbose = TRUE){
-        if (verbose) { message("same cell_type") }
+        if (verbose) { message("same cellType") }
         if (length(lResults) == 0) {
             lResults <- cGeneSplitValue
         } else {
             if (verbose){
                 message("check if concat lists still gives target")
             }
-            concat_genes_list <- c(lResults, cGeneSplitValue)
+            concatGenesList <- c(lResults, cGeneSplitValue)
             if (verbose) {
                 message(paste0(
                     "length of tested gene list: ",
-                    length(unique(concat_genes_list))
+                    length(unique(concatGenesList))
                 ))
             }
             # check if concat lists still gives target
-            mod_obj <- predictWithNewValue(exprs, concat_genes_list, clusters,
+            modObj <- predictWithNewValue(exprs, concatGenesList, clusters,
                 target, classifier,
                 advMethod = advMethod,
                 advFixedValue = advFixedValue, advFct = advFct,
                 verbose = verbose
             )
-            concat_cell_type <- mod_obj[1]
-            if (concat_cell_type == target) {
+            concatCellType <- modObj[1]
+            if (concatCellType == target) {
                 if (verbose) { message("YES: merge results") }
                 # Merge results
                 lResults <- c(lResults, cGeneSplitValue)
@@ -179,18 +187,18 @@ advMaxChange <- function(exprs, clusters, target, classifier,
             message("before predictWithNewValue 1")
             message(length(cGeneSplitValue))
         }
-        mod_obj <- predictWithNewValue(exprs, cGeneSplitValue,
+        modObj <- predictWithNewValue(exprs, cGeneSplitValue,
             clusters, target, classifier,
             advMethod = advMethod,
             advFixedValue = advFixedValue, advFct = advFct,
             verbose = TRUE
         )
-        cell_type <- mod_obj[1]
-        celltype_score <- mod_obj[2]
-        message(cell_type)
-        message(celltype_score)
+        cellType <- modObj[1]
+        celltypeScore <- modObj[2]
+        message(cellType)
+        message(celltypeScore)
     }
-    if (cell_type == target) {
+    if (cellType == target) {
         lResults <- .dichotMaxSameType(lResults,
                     cGeneSplitValue,
                     exprs, clusters,
@@ -200,7 +208,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                     maxSplitSize,
                     verbose = TRUE)
     } else {
-        if (verbose) { message("NOT same cell_type") }
+        if (verbose) { message("NOT same cellType") }
         if (length(cGeneSplitValue) > maxSplitSize) {
             lResults <- .predictionDichotMaxChange(exprs,
                 unname(cGeneSplitValue), clusters, target,
@@ -220,16 +228,16 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                                     advFixedValue = 3,
                                     advFct = NULL, maxSplitSize = 1,
                                     verbose = TRUE) {
-    c_gene_split <- split(unlist(genes), c(1,2))
+    cGeneSplit <- split(unlist(genes), c(1,2))
     message(paste0("genes size: ", length(unlist(genes))))
     message(paste0("current gene results length: ", length(lResults)))
     # Random order for each reccursion
-    random_index <- sample(c(1,2), 2)
-    c_gene_split <- c_gene_split[random_index]
-    lResults <- .dichotMaxSplit(lResults, unname(unlist(c_gene_split[1])),
+    randomIndex <- sample(c(1,2), 2)
+    cGeneSplit <- cGeneSplit[randomIndex]
+    lResults <- .dichotMaxSplit(lResults, unname(unlist(cGeneSplit[1])),
                     exprs, genes, clusters, target, classifier, advMethod,
                     advFixedValue, advFct, maxSplitSize, verbose)
-    lResults <- .dichotMaxSplit(lResults, unname(unlist(c_gene_split[2])),
+    lResults <- .dichotMaxSplit(lResults, unname(unlist(cGeneSplit[2])),
                 exprs, genes, clusters, target, classifier, advMethod,
                 advFixedValue, advFct, maxSplitSize, verbose)
     lResults
