@@ -128,7 +128,8 @@ best_results
 ## 127 perc1 perc1
 ```
 
-Then we modify the rna expression matrix to fool the classifier:
+Then we modify the rna expression matrix to fool the classifier,
+and we check it successfully changed the classification.
 
 ```r
 min_change_attack_rna_matrix <- mat_pbmc
@@ -138,11 +139,7 @@ for ( i in seq_len(length(colnames(best_results)))){
     min_change_attack_rna_matrix <- advModifications(min_change_attack_rna_matrix,
         gene2modif, cell_types, "DC", advMethod=modif)
 }
-```
 
-And we check it successfully changed the classification.
-
-```r
 res_classif <- CHETAHClassifier(min_change_attack_rna_matrix, cell_types, "DC")
 res_classif
 ```

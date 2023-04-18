@@ -44,6 +44,7 @@ Here we demonstrate how to implement a classifier, and take the example of `CHET
 de Kanter JK, Lijnzaad P, Candelli T, Margaritis T, Holstege FCP (2019). “CHETAH: a selective, hierarchical cell type identification method for single-cell RNA sequencing.” Nucleic Acids Research. ISSN 0305-1048, doi: 10.1093/nar/gkz543.
 
 First let's load a `train` and a `test` dataset.
+Then we convert the `test` dataset into a `Seurat` object for visualization purpose.
 
 ```r
 library(CHETAH)
@@ -56,12 +57,6 @@ test_4k <- TENxPBMCData(dataset = "pbmc4k")
 cell_types_3k <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
 cell_types_3k <- read.table(cell_types_3k, sep="\t")
 colData(train_3k)$celltypes <- cell_types_3k$cell_type
-```
-
-Then we convert the `test` dataset into a `Seurat` object for visualization purpose.
-
-
-```r
 counts4seurat <- t(matrixFromSCE(test_4k))
 pbmc <- CreateSeuratObject(counts = counts4seurat, project = "pbmc4k", min.cells = 3, min.features = 200)
 # Filter, normalize and find features
@@ -154,7 +149,7 @@ CHETAHClassifier <- function(expr, clusters, target){
 
 You can now test `CHETAH` classifier with `adverSCarial` tools.
 
-Let's run a `maxChangeAttack`.
+Let's run a `maxChangeAttack`. 
 
 
 ```r
