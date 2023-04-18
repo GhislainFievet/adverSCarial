@@ -58,12 +58,15 @@ Load libraries
 library(adverSCarial)
 ```
 
-Load a pbmc SingleCellExperiment and its cell type classification.
+Load a pbmc raw data
 
 ```{r min change attack, message=FALSE, warning = FALSE}
 matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adverSCarial")
 matPbmc <- read.table(matPbmc, sep="\t")
+```
 
+and its cell type classification.
+```{r load annnots, message=FALSE, warning = FALSE}
 cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adverSCarial")
 cellTypes <- read.table(cellTypes, sep="\t")$cell_type
 ```

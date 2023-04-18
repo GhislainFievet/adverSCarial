@@ -43,16 +43,12 @@ Here we demonstrate how to implement a classifier, and take the example of `CHET
 
 de Kanter JK, Lijnzaad P, Candelli T, Margaritis T, Holstege FCP (2019). “CHETAH: a selective, hierarchical cell type identification method for single-cell RNA sequencing.” Nucleic Acids Research. ISSN 0305-1048, doi: 10.1093/nar/gkz543.
 
+First let's load a `train` and a `test` dataset.
 
 ```r
 library(CHETAH)
 library(Seurat)
-```
 
-First let's load a `train` and a `test` dataset.
-
-
-```r
 # Load scRNA-seq datasets
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
@@ -79,6 +75,7 @@ pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
 # Cluster and visualize
 pbmc <- FindNeighbors(pbmc, dims = 1:10)
 pbmc <- FindClusters(pbmc, resolution = 0.5)
+pbmc <- RunUMAP(pbmc, dims = 1:10)
 ```
 
 ```
@@ -93,11 +90,7 @@ pbmc <- FindClusters(pbmc, resolution = 0.5)
 ## Elapsed time: 0 seconds
 ```
 
-```r
-pbmc <- RunUMAP(pbmc, dims = 1:10)
-```
-
-We annotate cells with `CHETAH`.
+We annotate cells with `CHETAH`, and visualize the results.
 
 
 ```r
@@ -108,12 +101,6 @@ input <- CHETAHclassifier(input = input, ref_cells = reference_3k)
 input <- Classify(input = input, 0.00001)
 pbmc@meta.data[['chetah_classification']] <- input$celltype_CHETAH
 Idents(pbmc) <- 'chetah_classification'
-```
-
-And visualize the results
-
-
-```r
 # Known markers for each cell type
 markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
@@ -180,19 +167,11 @@ adv_max_change <- advMaxChange(rna_matrix, clusters_id, "DC", CHETAHClassifier, 
 Let's run this attack and verify if it is successful.
 
 First we modify the `rna_matrix` matrix on the target cluster, on the genes previously determined.
-
-
-```r
-mat_max_adver <- advModifications(rna_matrix, adv_max_change, clusters_id, "DC")
-```
-
 Then we verify that classification is still `DC`.
 
 ```r
+mat_max_adver <- advModifications(rna_matrix, adv_max_change, clusters_id, "DC")
 rf_result <- CHETAHClassifier(mat_max_adver, clusters_id, "DC")
-```
-
-```r
 rf_result
 ```
 

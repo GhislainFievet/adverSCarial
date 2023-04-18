@@ -25,10 +25,7 @@ library(adverSCarial)
 library(TENxPBMCData)
 library(CHETAH)
 library(Seurat)
-```
 
-
-```r
 pbmc <- TENxPBMCData(dataset = "pbmc3k")
 mat_pbmc <- matrixFromSCE(pbmc)
 
@@ -73,9 +70,6 @@ seurat_markers <- FindMarkers(pbmc, ident.1 = "DC", ident.2="CD14+ Mono")
 genes_4walk <- rownames(seurat_markers[abs(seurat_markers$avg_log2FC)>1,])
 # Remove the officiel markers from the candidates
 genes_4walk <- genes_4walk[!genes_4walk %in% markers]
-```
-
-```r
 genes_4walk
 ```
 
@@ -85,19 +79,13 @@ genes_4walk
 ## [13] "VCAN"     "IRS2"     "CXCL8"
 ```
 
-Then we define a list of modifications to test:
+Then we define a list of modifications to test, and we process to a random
+walk parameter search on these genes and these modifications:
+
 
 ```r
 modifications <- list(c("perc1"), c("perc99"))
-```
-
-Then we process to a random walk parameter search on these genes and these modifications:
-
-```r
 rand_walk_min_change <- advRandWalkMinChange(mat_pbmc, cell_types, "DC", CHETAHClassifier, genes=genes_4walk, modifications=modifications, walkLength=50)
-```
-
-```r
 head(rand_walk_min_change)
 ```
 
@@ -156,10 +144,6 @@ And we check it successfully changed the classification.
 
 ```r
 res_classif <- CHETAHClassifier(min_change_attack_rna_matrix, cell_types, "DC")
-```
-
-
-```r
 res_classif
 ```
 
