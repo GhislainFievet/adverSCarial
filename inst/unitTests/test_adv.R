@@ -61,7 +61,7 @@ test_maxChangeOverview <- function(){
 test_minChangeOverview <- function(){
     exprs <- data.frame(a=c(0,0,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     clusters <- c("b","b","t","t")
-    checkTrue(all(dim(minChangeOverview(exprs, clusters, MyClassifier)))==c(2,2))
+    checkTrue(all(dim(minChangeOverview(exprs, clusters, MyClassifier))==c(2,2)))
 }
 
 test_advGridMinChange <- function(){
