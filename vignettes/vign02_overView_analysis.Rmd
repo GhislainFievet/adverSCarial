@@ -28,10 +28,16 @@ library(adverSCarial)
 matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adverSCarial")
 matPbmc <- read.table(matPbmc, sep="\t")
 ```
+```{r visualize1, message=FALSE, warning = FALSE}
+head(matPbmc)
+```
 ## Load cell type annotations
 ```{r Load cell type annotations, message=FALSE, warning = FALSE}
 cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adverSCarial")
 cellTypes <- read.table(cellTypes, sep="\t")$cell_type
+```
+```{r visualize2, message=FALSE, warning = FALSE}
+head(cellTypes)
 ```
 
 # Run vulnerability analysis with `minChangeOverview` and `maxChangeOverview`
