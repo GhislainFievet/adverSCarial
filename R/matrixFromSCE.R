@@ -3,7 +3,7 @@
 #'
 #' @details This function retrieves from a SingleCellExperiment
 #' object the raw RNA expression value corresponding to the hgnc
-#' genes. The resulting matrix can then be used with adverSCarial
+#' genes. The resulting matrix can then be used with adveRSCarial
 #' packages.
 #' @param sce SingleCellExperiment object to convert
 #' @return the RNA expression matrix from a SingleCellExperiment

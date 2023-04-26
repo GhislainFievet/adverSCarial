@@ -1,10 +1,10 @@
-title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
+title: "adveRSCarial, generate and analyze the vulnerability of scRNA-seq
     classifiers to adversarial attacks"
-shorttitle: "adverSCarial"
+shorttitle: "adveRSCarial"
 author: Ghislain FIEVET <ghislain.fievet@gmail.com>
-package: adverSCarial
+package: adveRSCarial
 abstract: >
-    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    adveRSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
     classifiers to adversarial attacks. The package is versatile and provides a format for integrating
     any type of classifier. It offers functions for studying and generating two types of attacks,
     min change attack and max change attack. The min change attack involves making a small modification
@@ -21,7 +21,7 @@ vignette: >
   
 
 ```r
-library(adverSCarial)
+library(adveRSCarial)
 library(TENxPBMCData)
 library(CHETAH)
 library(Seurat)
@@ -29,7 +29,7 @@ library(Seurat)
 pbmc <- TENxPBMCData(dataset = "pbmc3k")
 mat_pbmc <- matrixFromSCE(pbmc)
 
-cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
+cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adveRSCarial")
 cell_types <- read.table(cell_types, sep="\t")$cell_type
 ```
 
@@ -184,7 +184,7 @@ sessionInfo()
 ## [13] GenomicRanges_1.48.0        GenomeInfoDb_1.32.4        
 ## [15] IRanges_2.30.1              S4Vectors_0.34.0           
 ## [17] BiocGenerics_0.42.0         MatrixGenerics_1.8.1       
-## [19] matrixStats_0.63.0          adverSCarial_0.99.0        
+## [19] matrixStats_0.63.0          adveRSCarial_0.99.0        
 ## [21] BiocStyle_2.24.0           
 ## 
 ## loaded via a namespace (and not attached):

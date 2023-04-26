@@ -1,10 +1,10 @@
-title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
+title: "adveRSCarial, generate and analyze the vulnerability of scRNA-seq
     classifiers to adversarial attacks"
-shorttitle: "adverSCarial"
+shorttitle: "adveRSCarial"
 author: Ghislain FIEVET <ghislain.fievet@gmail.com>
-package: adverSCarial
+package: adveRSCarial
 abstract: >
-    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    adveRSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
     classifiers to adversarial attacks. The package is versatile and provides a format for integrating
     any type of classifier. It offers functions for studying and generating two types of attacks,
     min change attack and max change attack. The min change attack involves making a small modification
@@ -20,12 +20,12 @@ vignette: >
 # Load data
   
 ```{r load libraries, warning = FALSE, message=FALSE}
-library(adverSCarial)
+library(adveRSCarial)
 ```
 
 ## Load RNA matrix
 ```{r min change attack, message=FALSE, warning = FALSE}
-matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adverSCarial")
+matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adveRSCarial")
 ```
 
 ```{r load table}
@@ -37,7 +37,7 @@ head(matPbmc)
 ```
 ## Load cell type annotations
 ```{r Load cell type annotations, message=FALSE, warning = FALSE}
-cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adverSCarial")
+cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adveRSCarial")
 ```
 
 ```{r load table 2}

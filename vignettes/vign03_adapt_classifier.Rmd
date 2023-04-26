@@ -1,9 +1,9 @@
 title: "Adapt a classifier: CHETAH example"
 shorttitle: "Adapt a classifier"
 author: Ghislain FIEVET <ghislain.fievet@gmail.com>
-package: adverSCarial
+package: adveRSCarial
 abstract: >
-    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    adveRSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
     classifiers to adversarial attacks. The package is versatile and provides a format for integrating
     any type of classifier. It offers functions for studying and generating two types of attacks,
     min change attack and max change attack. The min change attack involves making a small modification
@@ -24,7 +24,7 @@ vignette: >
   
 
 ```r
-library(adverSCarial)
+library(adveRSCarial)
 library(TENxPBMCData)
 ```
 
@@ -33,7 +33,7 @@ library(TENxPBMCData)
 pbmc <- TENxPBMCData(dataset = "pbmc3k")
 mat_pbmc <- matrixFromSCE(pbmc)
 
-cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
+cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adveRSCarial")
 cell_types <- read.table(cell_types, sep="\t")$cell_type
 ```
 
@@ -54,7 +54,7 @@ library(Seurat)
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
 
-cell_types_3k <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
+cell_types_3k <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adveRSCarial")
 cell_types_3k <- read.table(cell_types_3k, sep="\t")
 colData(train_3k)$celltypes <- cell_types_3k$cell_type
 counts4seurat <- t(matrixFromSCE(test_4k))
@@ -114,7 +114,7 @@ DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5)
 ## Adapt the classifier
 `CHETAH` is a classifier that, when given a list of RNA values for a cell, returns a specific cell type from that list. We need to adjust the classifier so that it can assign a cell type to a group of cells.
     
-A classifier function has to be formated as follow to be used with *adverSCarial*:
+A classifier function has to be formated as follow to be used with *adveRSCarial*:
 ```R
     classifier = function(expr, clusters, target){
                 
@@ -126,7 +126,7 @@ A classifier function has to be formated as follow to be used with *adverSCarial
     
 The matrix `expr` contains RNA expression values, the vector `clusters` consists of the cluster IDs for each cell in `expr`, and `target` is the ID of the cluster for which we want to have a classification. The function returns a vector with the classification result, and a score.
 
-This is how you can adapt `CHETAH` for `adverSCarial`.
+This is how you can adapt `CHETAH` for `adveRSCarial`.
 
 ```r
 CHETAHClassifier <- function(expr, clusters, target){
@@ -147,7 +147,7 @@ CHETAHClassifier <- function(expr, clusters, target){
 }
 ```
 
-You can now test `CHETAH` classifier with `adverSCarial` tools.
+You can now test `CHETAH` classifier with `adveRSCarial` tools.
 
 Let's run a `maxChangeAttack`. 
 
@@ -211,7 +211,7 @@ sessionInfo()
 ## [13] GenomicRanges_1.48.0        GenomeInfoDb_1.32.4        
 ## [15] IRanges_2.30.1              S4Vectors_0.34.0           
 ## [17] BiocGenerics_0.42.0         MatrixGenerics_1.8.1       
-## [19] matrixStats_0.63.0          adverSCarial_0.99.0        
+## [19] matrixStats_0.63.0          adveRSCarial_0.99.0        
 ## [21] BiocStyle_2.24.0           
 ## 
 ## loaded via a namespace (and not attached):

@@ -1,11 +1,11 @@
 ---
-title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
+title: "adveRSCarial, generate and analyze the vulnerability of scRNA-seq
     classifiers to adversarial attacks"
-shorttitle: "adverSCarial"
+shorttitle: "adveRSCarial"
 author: Ghislain FIEVET <ghislain.fievet@gmail.com>
-package: adverSCarial
+package: adveRSCarial
 abstract: >
-    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    adveRSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
     classifiers to adversarial attacks. The package is versatile and provides a format for integrating
     any type of classifier. It offers functions for studying and generating two types of attacks,
     min change attack and max change attack. The min change attack involves making a small modification
@@ -18,13 +18,13 @@ output:
         toc: true
         toc_depth: 2
 vignette: >
-  %\VignetteIndexEntry{adverSCarial}
+  %\VignetteIndexEntry{adveRSCarial}
   %\VignetteEngine{knitr::knitr}
   %\VignetteEncoding{UTF-8}
 ---
 
 # Introduction
-**adverSCarial is a package for generating and evaluating vulnerability to adversarial attacks on single-cell RNA sequencing classifiers.**
+**adveRSCarial is a package for generating and evaluating vulnerability to adversarial attacks on single-cell RNA sequencing classifiers.**
 Single cell analysis are on the way to be used in clinical routine. As a critical use, algorithms must address the challenge of ensuring reliability, one concern being the susceptibility to adversarial attacks.
 
 
@@ -45,7 +45,7 @@ The max change attack involves making a large modification to the input without 
 if (!require("BiocManager")) {
     install.packages("BiocManager")
 }
-BiocManager::install('adverSCarial')
+BiocManager::install('adveRSCarial')
 ```
 
 # Generate an adversarial attack
@@ -55,13 +55,13 @@ There are two types of adversarial attacks: `min change attack` which modifies s
 Load libraries
 
 ```{r load libraries, warning = FALSE, message=FALSE}
-library(adverSCarial)
+library(adveRSCarial)
 ```
 
 Load a pbmc raw data
 
 ```{r min change attack, message=FALSE, warning = FALSE}
-matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adverSCarial")
+matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adveRSCarial")
 matPbmc <- read.table(matPbmc, sep="\t")
 ```
 
@@ -72,7 +72,7 @@ head(matPbmc)
 
 and its cell type classification.
 ```{r load annnots, message=FALSE, warning = FALSE}
-cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adverSCarial")
+cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adveRSCarial")
 cellTypes <- read.table(cellTypes, sep="\t")$cell_type
 ```
 

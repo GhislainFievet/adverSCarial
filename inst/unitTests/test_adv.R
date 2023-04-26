@@ -1,5 +1,5 @@
 library(RUnit)
-library(adverSCarial)
+library(adveRSCarial)
 
 runTests <- function() {
     test_advModifications()
