@@ -1,6 +1,6 @@
 #' Example cell type classifier for pbmc clustered datasets.
 #'
-#' @details This classifier aims at testing the adveRSCarial
+#' @details This classifier aims at testing the adverSCarial
 #' package of real pbmc data. It is a simple marker based
 #' classifier. It looks at the average value of a few genes
 #' inside a cluster, and returns the associated cell type.
@@ -17,7 +17,7 @@
 #' mat_rna <- matrixFromSCE(pbmc)
 #' cell_types <- system.file("extdata",
 #'     "pbmc3k_cell_types.tsv",
-#'     package = "adveRSCarial"
+#'     package = "adverSCarial"
 #' )
 #' cell_types <- read.table(cell_types, sep = "\t")$cell_type
 #'
