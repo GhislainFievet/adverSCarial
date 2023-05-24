@@ -16,12 +16,13 @@ maxChangeOverview(
   advFixedValue = 3,
   advFct = NULL,
   maxSplitSize = 100,
+  argForClassif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns.}
+\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
+cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
@@ -55,6 +56,9 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
 \item{maxSplitSize}{max size of dichotomic slices.}
+
+\item{argForClassif}{the type of the first argument to feed to the
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }

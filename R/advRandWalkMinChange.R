@@ -32,8 +32,8 @@
 #' Step 2 is to perform a random walk search to reduce the number of genes
 #' needed to change the classification.
 #' The 
-#' @param exprs a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns.
+#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
+#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
 #' @param classifier a classifier in the suitable format.
@@ -57,6 +57,8 @@
 #' for new combination of parameters
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
+#' @param argForClassif the type of the first argument to feed to the
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return DataFrame results of the classification of all the grid combinations
 #' @examples
@@ -91,9 +93,10 @@
 advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         modifications = list(c("perc1"), c("perc99")), firstBatch = 100,
         walkLength = 100, stepChangeRatio = 0.2, whileMaxCount = 10000,
-        changeType = "any", verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
-        stop("The argument exprs must be a matrix or a data.frame.")
+        changeType = "any", argForClassif = 'data.frame',
+        verbose = FALSE) {
+    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
+        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -125,12 +128,18 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     if (!is.character(changeType)) {
         stop("The argument changeType must be character.")
     }
+    if (!is.character(argForClassif)) {
+        stop("The argument argForClassif must be character: 'data.frame' or 'SingleCellExperiment'.")
+    }
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
+    if (is(exprs,'SingleCellExperiment') ){
+        exprs <- as.matrix(t(counts(exprs)))
+    }
 
     beforeWalk <- .randWalkBeforeWalk(exprs, genes, modifications,
-        clusters, target, classifier, firstBatch, verbose)
+        clusters, target, classifier, firstBatch, argForClassif, verbose)
     previousStrComb <- beforeWalk[[1]]
     functionResults <- beforeWalk[[2]]
     bestAttackParams <- beforeWalk[[3]]
@@ -154,21 +163,21 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         newWalkStep <- rwNewVector[[3]]
 
         previousStrComb <- c(previousStrComb, newWalkStep)
-        functionResults <- .randWalkTryNewVector(exprs, genes,
+        lrwtnv <- .randWalkTryNewVector(exprs, genes,
             newWalkParams, modifications, clusters, target,
             classifier, bestAttackParams, i, functionResults,
-            changeType, verbose)
+            changeType, argForClassif, verbose)
+        functionResults <- lrwtnv[['functionResults']]
+        bestAttackParams <- lrwtnv[['bestAttackParams']]
     }
-    functionResults <- functionResults[order(
-            as.numeric(functionResults$genesModified)), ]
-    functionResults <- functionResults[order(
-            functionResults$typeModified, decreasing = TRUE), ]
+    functionResults <- functionResults[order(as.numeric(functionResults$genesModified)), ]
+    functionResults <- functionResults[order(functionResults$typeModified, decreasing = TRUE), ]
     S4Vectors::DataFrame(functionResults)
 }
 
 .randWalkTryNewVector <- function(exprs, genes, newWalkParams, modifications,
         clusters, target, classifier, bestAttackParams, i,
-        functionResults, changeType, verbose){
+        functionResults, changeType, argForClassif, verbose){
     exprsTemp <- exprs
     rowResults <- c()
     rowResultsInt <- c()
@@ -197,22 +206,26 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         }
     }
     genesModified <- length(genes) - sum(rowResults == "NA")
-    previousGenesModified <- length(genes) -
-        sum(bestAttackParams == (length(modifications) + 1))
+    previousGenesModified <- length(genes) - sum(bestAttackParams == (length(modifications) + 1))
+    if ( argForClassif == 'SingleCellExperiment'){
+        exprsTemp <- SingleCellExperiment(assays = list(counts = t(exprsTemp)))
+    }
     classResults <- classifier(exprsTemp, clusters, target)
     typeModified <- classResults[1] != target
     if ( changeType == "not_na")
         typeModified <- (classResults[1] != target) &&
             classResults[1] != "NA"
     if (typeModified && genesModified <= previousGenesModified) {
-        bestAttackParams <- rowResultsInt
+        tempBestAttackParams <- as.data.frame(t(rowResultsInt))
+        colnames(tempBestAttackParams) <- colnames(bestAttackParams)
+        bestAttackParams <- tempBestAttackParams
         message( "Better attack with only ", genesModified,
             " genes modified")
     }
     rowResults <- c(classResults[1], classResults[2],
         genesModified, typeModified, (i + 1), rowResults)
     functionResults <- rbind(rowResults, functionResults)
-    functionResults
+    list(functionResults=functionResults, bestAttackParams=bestAttackParams)
 }
 
 .randWalkNewVector <- function(previousStrComb, modifications,
@@ -221,12 +234,9 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     newWalkStep <- -1
     killCount <- 0
     while (newWalkStep %in% previousStrComb ||
-        length(newWalkParams[
-            newWalkParams != (length(modifications) + 1)
-        ]) >=
-            length(bestAttackParams[bestAttackParams !=
-                (length(modifications) + 1)])) {
-        newWalkParams <- vapply(bestAttackParams, function(param){
+        length(newWalkParams[newWalkParams != (length(modifications) + 1)]) >=
+            length(bestAttackParams[bestAttackParams != (length(modifications) + 1)])) {
+        newWalkParamsb <- vapply(as.numeric(bestAttackParams), function(param){
             if (param != length(modifications) + 1) {
                 if (sample(seq_len(round(1 / stepChangeRatio)), 1) == 1) {
                     return(sample(seq_len(length(modifications) + 1), 1))
@@ -234,15 +244,22 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
                     return(param)
                 }
             } else {
-                if (sample(seq_len(round(sum(newWalkParams ==
-                    (length(modifications) + 1))^(1 / 2) /
-                    stepChangeRatio)), 1) == 1) {
-                    return(sample(seq_len(length(modifications) + 1), 1))
-                } else {
+                if (round(sum(newWalkParams ==
+                        (length(modifications) + 1))^(1 / 2) /
+                        stepChangeRatio) == 0){
                     return(param)
+                } else {
+                    if (sample(seq_len(round(sum(newWalkParams ==
+                        (length(modifications) + 1))^(1 / 2) /
+                        stepChangeRatio)), 1) == 1) {
+                        return(sample(seq_len(length(modifications) + 1), 1))
+                    } else {
+                        return(param)
+                    }
                 }
             }
         }, numeric(1))
+        newWalkParams <- newWalkParamsb
         newWalkStep <- paste(newWalkParams, collapse = " ")
         # If inifite loop kill function and return results
         if (killCount > whileMaxCount) {
@@ -259,19 +276,21 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
 }
 
 .randWalkBeforeWalk <- function(exprs, genes, modifications,
-            clusters, target, classifier, firstBatch, verbose){
+            clusters, target, classifier, firstBatch, argForClassif, verbose){
     initObjs <- .initRandWalk(modifications, genes, firstBatch)
-    previousStrComb <- initObjs[[1]]; testsGrid <- initObjs[[2]]
-    functionResults <- initObjs[[3]]; functionResultsInt <- initObjs[[4]]
-    results <- initObjs[[5]]; resultsInt <- initObjs[[6]]
+    previousStrComb <- initObjs[[1]]
+    testsGrid <- initObjs[[2]]
+    functionResults <- initObjs[[3]]
+    functionResultsInt <- initObjs[[4]]
+    results <- initObjs[[5]]
+    resultsInt <- initObjs[[6]]
     rwSeed <- .randWalkGetSeed(testsGrid, exprs, genes, modifications,
         clusters, target, classifier, results, resultsInt,
-        previousStrComb, verbose)
-    results <- rwSeed[[1]]; resultsInt <- rwSeed[[2]]
+        previousStrComb, argForClassif, verbose)
+    results <- rwSeed[[1]]
+    resultsInt <- rwSeed[[2]]
     previousStrComb <- rwSeed[[3]]
-
-    results$genesModified <-
-        length(genes) - apply(results, 1, function(x) sum(x == "NA"))
+    results$genesModified <- length(genes) - apply(results, 1, function(x) sum(x == "NA"))
     results$typeModified <- results$prediction != target
     results$iteration <- 1
     results <- results[, c("prediction", "odd", "genesModified",
@@ -283,22 +302,19 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     resultsInt <- resultsInt[, c("prediction", "odd", "genesModified",
         "typeModified", "iteration", genes)]
     functionResults <- rbind(results, functionResults)
-    functionResults <-
-        functionResults[order(functionResults$genesModified), ]
-    functionResults <- functionResults[order(functionResults$typeModified,
-            decreasing = TRUE), ]
+    functionResults <- functionResults[order(functionResults$genesModified), ]
+    functionResults <- functionResults[order(functionResults$typeModified, decreasing = TRUE), ]
     functionResultsInt <- rbind(resultsInt, functionResultsInt)
-    functionResultsInt <-
-        functionResultsInt[order(functionResultsInt$genesModified), ]
-    functionResultsInt <- functionResultsInt[
-        order(functionResultsInt$typeModified, decreasing = TRUE), ]
+    functionResultsInt <- functionResultsInt[order(functionResultsInt$genesModified), ]
+    functionResultsInt <- functionResultsInt[order(functionResultsInt$typeModified, decreasing = TRUE), ]
     bestAttackParams <- functionResultsInt[1, 6:ncol(functionResultsInt)]
     list(previousStrComb, functionResults, bestAttackParams)
 }
 
 .randWalkGetSeed <- function(testsGrid, exprs, genes, modifications, clusters,
-    target, classifier, results, resultsInt, previousStrComb, verbose){
-    i<- 1; newPreviousStrComb <- c()
+    target, classifier, results, resultsInt, previousStrComb, argForClassif, verbose){
+    i<- 1
+    newPreviousStrComb <- c()
     while (i <= nrow(testsGrid)) {
         message("Running first batch to determine walk seed: ",
             i, " on ", nrow(testsGrid))
@@ -328,6 +344,9 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
                 rowResults <- c(rowResults, "NA")
                 rowResultsInt <- c(rowResultsInt, modifInd)
             }
+        }
+        if ( argForClassif == 'SingleCellExperiment'){
+            exprsTemp <- SingleCellExperiment(assays = list(counts = t(exprsTemp)))
         }
         classResults <- classifier(exprsTemp, clusters, target)
         rowResults <- c(rowResults, classResults[1], classResults[2])

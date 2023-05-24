@@ -28,8 +28,8 @@
 #' 
 #' The function returns a dataframe with the number of genes of the max
 #' change attack for each modification in columns, for each cell type in rows.
-#' @param exprs a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns.
+#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
+#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param classifier a classifier in the suitable format.
 #' A classifier function should be formated as follow:
@@ -58,6 +58,8 @@
 #' @param maxSplitSize max size of dichotomic slices.
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
+#' @param argForClassif the type of the first argument to feed to the
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a DataFrame storing the number of possible min change
 #' attacks each cell type and each modification.
@@ -88,9 +90,10 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             genes = c(), modifications = list(c("perc1"), c("perc99")),
             advMethod = "perc99", advFixedValue = 3, advFct = NULL,
             firstDichot = 100, maxSplitSize = 100, changeType = "any",
+            argForClassif = 'data.frame',
             verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
-        stop("The argument exprs must be a matrix or a data.frame.")
+    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
+        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -119,18 +122,24 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
     if (!is.character(changeType)) {
         stop("The argument changeType must be character.")
     }
+    if (!is.character(argForClassif)) {
+        stop("The argument argForClassif must be character: 'data.frame' or 'SingleCellExperiment'.")
+    }
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
+    }
+    if (is(exprs,'SingleCellExperiment') ){
+        exprs <- as.matrix(t(counts(exprs)))
     }
 
     if (length(modifications) == 0) {
         dfResult <- .minOverArgModifs(exprs, clusters, classifier, exclGenes,
                             genes, advMethod, advFixedValue, advFct,
-                            firstDichot, maxSplitSize, changeType, verbose)
+                            firstDichot, maxSplitSize, changeType, argForClassif, verbose)
     } else {
         dfResult <- .minOverListModifs(exprs, clusters, classifier, exclGenes,
                             genes, modifications, firstDichot, maxSplitSize,
-                            changeType, verbose)
+                            changeType, argForClassif, verbose)
     }
     S4Vectors::DataFrame(dfResult)
 }
@@ -151,3 +160,100 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
     }
 }
 
+.minOverListModifs <- function(exprs, clusters, classifier, exclGenes,
+                            genes, modifications, firstDichot, maxSplitSize,
+                            changeType, argForClassif, verbose){
+    dfResult <- data.frame(todel = unique(clusters))
+    rownames(dfResult) <- unique(clusters);
+    dfNames <- unlist(lapply(seq_along(modifications), function(modifInd){
+        paste(modifications[[modifInd]], collapse = "_")
+    }))
+    vecsAttacksLength <- lapply(seq_along(modifications), function(modifInd){
+        mod1 <- modifications[[modifInd]][[1]]
+        attacksLength <- vapply(unique(clusters), function(cellType){
+            if (verbose) {
+                message("Running minChange attack on ", cellType,
+                    ", with a maxSplitSize of: ", maxSplitSize)
+                message("The smaller the maxSplitSize, the more precise",
+                    " the result will be, but it will take longer.")
+                message("Modification: ",
+                    paste(modifications[[modifInd]], collapse = " "))
+            }
+            if (length(modifications[[modifInd]]) == 1) {
+                minChangeGenes <- advMinChange(exprs, clusters, cellType,
+                    classifier, exclGenes = exclGenes, genes = genes,
+                    advMethod = mod1, maxSplitSize = maxSplitSize,
+                    firstDichot = firstDichot, changeType = changeType,
+                    argForClassif = argForClassif, verbose = verbose)@values
+            } else {
+                mod2 <- modifications[[modifInd]][[2]]
+                minChangeGenes <- advMinChange(exprs, clusters, cellType,
+                    classifier, exclGenes = exclGenes,
+                    genes = genes,
+                    advMethod = mod1, advFixedValue = mod2,
+                    advFct = mod2,
+                    maxSplitSize = maxSplitSize,
+                    firstDichot = firstDichot,
+                    changeType = changeType,
+                    argForClassif = argForClassif,
+                    verbose = verbose)@values
+            }
+            resultLength <- length(minChangeGenes)
+            if (verbose) {
+                message("An approximation gives about ", resultLength,
+                    " genes can cause a one gene min change attack on the ",
+                    cellType, " cell type for the modification ",
+                    paste(modifications[[modifInd]], collapse = " "))
+            }
+            return(resultLength)
+        }, numeric(1))
+        return(attacksLength)
+    })
+    dfResult <- do.call(cbind, list(dfResult, vecsAttacksLength))
+    dfResult$todel <- NULL
+    colnames(dfResult) <- dfNames
+    dfResult
+}
+
+.minOverArgModifs <- function(exprs, clusters, classifier, exclGenes,
+                    genes, advMethod, advFixedValue, advFct,
+                    firstDichot, maxSplitSize, changeType, argForClassif, verbose) {
+    attacksLength <- vapply(unique(clusters), function(cellType){
+        if (verbose) {
+            message(paste0(
+                "Running minChange attack on ", cellType,
+                ", with a maxSplitSize of: ", maxSplitSize
+            ))
+            message(
+                "The smaller the maxSplitSize, the more",
+                " precise the result will be, but it will take longer."
+            )
+        }
+        minChangeGenes <- advMinChange(exprs, clusters, cellType,
+            classifier,
+            exclGenes = exclGenes,
+            genes = genes, advMethod = advMethod,
+            advFixedValue = advFixedValue,
+            advFct = advFct,
+            maxSplitSize = maxSplitSize,
+            firstDichot = firstDichot,
+            changeType = changeType,
+            argForClassif = argForClassif,
+            verbose = verbose
+        )@values
+        resultLength <- length(minChangeGenes)
+        if (verbose) {
+            message(paste0(
+                "An approximation gives about ",
+                resultLength,
+                " genes can cause a one gene min change attack on the ",
+                cellType, " cell type"
+            ))
+        }
+        return(resultLength)
+    }, numeric(1))
+    names(attacksLength) <- unique(clusters)
+    dfResult <- data.frame(aboutGeneNumber = unlist(attacksLength))
+    rownames(dfResult) <- names(attacksLength)
+    dfResult
+}

@@ -13,9 +13,14 @@ abstract: >
     The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
     against adversarial attacks.
 vignette: >
-  %\VignetteIndexEntry{advRandWalkMinChange}
+  %\VignetteIndexEntry{Vign04_advRandWalkMinChange}
   %\VignetteEngine{knitr::knitr}
   %\VignetteEncoding{UTF-8}
+
+The `CHETAH` classifier is not vulnerable to one gene attack on `DC`cluster. We can use the `advRandWalkMinChange` function to generate a more complex attack, still looking for a minimum change in the input.
+
+We will find a list of genes suscpetibles to move the classification by using the `findMarkers` function from `scran`. Then we will use the `advRandWalkMinChange`
+function to shorten the list as much as possible.
 
 # Load data
   
@@ -24,128 +29,190 @@ vignette: >
 library(adverSCarial)
 library(TENxPBMCData)
 library(CHETAH)
-library(Seurat)
+library(scater)
+library(scran)
+library(stringr)
+```
 
-pbmc <- TENxPBMCData(dataset = "pbmc3k")
-mat_pbmc <- matrixFromSCE(pbmc)
+We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.
 
-cell_types <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
-cell_types <- read.table(cell_types, sep="\t")$cell_type
+
+```r
+train_3k <- TENxPBMCData(dataset = "pbmc3k")
+test_4k <- TENxPBMCData(dataset = "pbmc4k")
+
+# Convert from ensemble id to hgnc symbol
+test_4k <- sceConvertToHGNC(test_4k)
+train_3k <- sceConvertToHGNC(train_3k)
+
+cell_types_3k <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
+cell_types_3k <- read.table(cell_types_3k, sep="\t")
+colData(train_3k)$celltypes <- cell_types_3k$cell_type
+colnames(train_3k) = colData(train_3k)[['Barcode']]
+colnames(test_4k) = colData(test_4k)[['Barcode']]
+```
+
+Annotation of the *test_4k* dataset with CHETAH.
+
+```r
+input <- CHETAHclassifier(input = test_4k, ref_cells = train_3k)
+input <- Classify(input = input, 0.00001)
+colData(test_4k)$celltypes <- input$celltype_CHETAH
+```
+
+Processing of the SingleCellExperiment object.
+
+
+```r
+test_4k <- logNormCounts(test_4k)
+dec <- modelGeneVar(test_4k)
+hvg <- getTopHVGs(dec, prop=0.1)
+test_4k <- runPCA(test_4k, ncomponents=25, subset_row=hvg)
+test_4k <- runUMAP(test_4k, dimred = 'PCA')
 ```
 
 
 
-
-
-
+```r
+CHETAHClassifier <- function(expr, clusters, target){
+    reference_3k <- train_3k
+    input <- CHETAHclassifier(input = expr, ref_cells = reference_3k)
+    input <- Classify(input = input, 0.01)
+    final_predictions = input$celltype_CHETAH[clusters == target]
+    ratio <- as.numeric(sort(table(final_predictions), decreasing = TRUE)[1]) /
+        sum(as.numeric(sort(table(final_predictions), decreasing = TRUE)))
+    predicted_class <- names(sort(table(final_predictions), decreasing = TRUE)[1])
+    if ( ratio < 0.3){
+        predicted_class <- "NA"
+    }
+    c(predicted_class, ratio)
+}
 ```
-## Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-## 
-## Number of nodes: 4217
-## Number of edges: 146577
-## 
-## Running Louvain algorithm...
-## Maximum modularity in 10 random starts: 0.8969
-## Number of communities: 10
-## Elapsed time: 0 seconds
-```
-
-
-
-
-
 
 # Advanced attacks with `advRandWalkMinChange`
 
-The `CHETAH` classifier is not vulnerable to one gene attack on `DC`cluster. We can use the `advRandWalkMinChange` function to generate a more complex attack, still looking for a minimum change in the input.
+We use the `advRandWalkMinChange` function to generate a complex attack, looking for a minimum change of several genes in the input.
 
-First step is to look for a list of genes suscpetibles to move the classification. We get this list by using the `findMarkers` function from `Seurat`.
+First step is to look for a list of genes suscpetibles to move the classification. We get this list by using the `findMarkers` function from `scran`.
 
 
 ```r
 markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
 
-seurat_markers <- FindMarkers(pbmc, ident.1 = "DC", ident.2="CD14+ Mono")
-genes_4walk <- rownames(seurat_markers[abs(seurat_markers$avg_log2FC)>1,])
+test_4k_subset <- test_4k[, test_4k$celltypes %in% c("CD14+ Mono", "DC")]
+fm_t4k <- findMarkers(test_4k_subset, test_4k_subset$celltypes)
+genes_4walk <- rownames(fm_t4k[['DC']][abs(fm_t4k[['DC']]$summary.logFC)>1,])
+
 # Remove the officiel markers from the candidates
 genes_4walk <- genes_4walk[!genes_4walk %in% markers]
+```
+
+```r
 genes_4walk
 ```
 
 ```
-##  [1] "S100A9"   "HLA-DQB1" "S100A8"   "CLEC9A"   "HLA-DRA"  "HLA-DPA1"
-##  [7] "HLA-DPB1" "HLA-DQA1" "HLA-DRB1" "CD74"     "S100A12"  "CLEC10A" 
-## [13] "VCAN"     "IRS2"     "CXCL8"
+##  [1] "HLA-DRA"  "S100A12"  "HLA-DQB1" "HLA-DPA1" "HLA-DPB1" "HLA-DRB1"
+##  [7] "S100A8"   "HLA-DQA1" "S100A9"   "CD74"     "VCAN"     "HLA-DMA" 
+## [13] "CTSS"     "FTL"      "FCN1"     "TYROBP"   "NEAT1"
 ```
 
-Then we define a list of modifications to test, and we process to a random
-walk parameter search on these genes and these modifications:
-
+Then we define a list of modifications to test:
 
 ```r
-modifications <- list(c("perc1"), c("perc99"))
-rand_walk_min_change <- advRandWalkMinChange(mat_pbmc, cell_types, "DC", CHETAHClassifier, genes=genes_4walk, modifications=modifications, walkLength=50)
+modifications <- list()
+modifications[[1]] <- list("perc99")
+modifications[[2]] <- list("perc1")
+```
+
+Then we process to a random walk parameter search on these genes and these modifications:
+
+```r
+rand_walk_min_change <- advRandWalkMinChange(test_4k, colData(test_4k)$celltypes, "DC", CHETAHClassifier,
+                                             genes=genes_4walk, modifications=modifications,
+                                             walkLength=15, argForClassif = 'SingleCellExperiment')
+```
+
+```r
 head(rand_walk_min_change)
 ```
 
 ```
-##     prediction     odd genes_modified type_modified iteration S100A9 HLA-DQB1
-## 127 CD14+ Mono 0.46875             11          TRUE        27 perc99    perc1
-## 123 CD14+ Mono     0.5             11          TRUE        23  perc1    perc1
-## 130 CD14+ Mono 0.46875             12          TRUE        30  perc1    perc1
-## 124 CD14+ Mono 0.40625             12          TRUE        24  perc1    perc1
-## 116 CD14+ Mono 0.40625             12          TRUE        16  perc1   perc99
-## 115 CD14+ Mono     0.5             12          TRUE        15     NA    perc1
-##     S100A8 CLEC9A HLA-DRA HLA-DPA1 HLA-DPB1 HLA-DQA1 HLA-DRB1  CD74 S100A12
-## 127     NA  perc1   perc1    perc1    perc1       NA    perc1    NA      NA
-## 123     NA  perc1   perc1    perc1    perc1       NA    perc1 perc1      NA
-## 130  perc1  perc1   perc1    perc1    perc1       NA    perc1 perc1   perc1
-## 124  perc1  perc1   perc1    perc1    perc1   perc99    perc1    NA      NA
-## 116  perc1  perc1   perc1    perc1    perc1    perc1       NA perc1   perc1
-## 115  perc1  perc1      NA    perc1    perc1    perc1    perc1 perc1   perc1
-##     CLEC10A   VCAN  IRS2  CXCL8
-## 127   perc1 perc99 perc1  perc1
-## 123   perc1  perc1 perc1     NA
-## 130      NA perc99 perc1     NA
-## 124   perc1     NA perc1  perc1
-## 116      NA  perc1    NA  perc1
-## 115      NA  perc1 perc1 perc99
+## DataFrame with 6 rows and 22 columns
+##     prediction         odd genesModified typeModified   iteration     HLA.DRA
+##    <character> <character>   <character>  <character> <character> <character>
+## 1   CD14+ Mono    0.421875             2         TRUE          16          NA
+## 2   CD14+ Mono    0.421875             3         TRUE          15          NA
+## 3 UNDETERMINED         0.5             4         TRUE          14          NA
+## 4 UNDETERMINED         0.5             5         TRUE          12          NA
+## 5 UNDETERMINED     0.53125             6         TRUE          11          NA
+## 6 UNDETERMINED       0.625             7         TRUE           9          NA
+##       S100A12    HLA.DQB1    HLA.DPA1    HLA.DPB1    HLA.DRB1      S100A8
+##   <character> <character> <character> <character> <character> <character>
+## 1          NA          NA          NA       perc1          NA          NA
+## 2          NA          NA          NA       perc1          NA          NA
+## 3          NA          NA          NA       perc1          NA          NA
+## 4          NA          NA          NA       perc1          NA          NA
+## 5          NA      perc99          NA       perc1          NA          NA
+## 6       perc1      perc99          NA       perc1          NA          NA
+##      HLA.DQA1      S100A9        CD74        VCAN     HLA.DMA        CTSS
+##   <character> <character> <character> <character> <character> <character>
+## 1          NA      perc99          NA          NA          NA          NA
+## 2          NA      perc99          NA       perc1          NA          NA
+## 3          NA       perc1          NA       perc1          NA          NA
+## 4          NA       perc1          NA       perc1      perc99          NA
+## 5          NA       perc1          NA      perc99      perc99          NA
+## 6          NA       perc1          NA       perc1          NA          NA
+##           FTL        FCN1      TYROBP       NEAT1
+##   <character> <character> <character> <character>
+## 1          NA          NA          NA          NA
+## 2          NA          NA          NA          NA
+## 3          NA          NA          NA       perc1
+## 4          NA          NA          NA       perc1
+## 5          NA          NA          NA       perc1
+## 6          NA          NA       perc1       perc1
 ```
 The first line of `rand_walk_min_change` contains the parameter for the attack:
 
 ```r
 best_results <- rand_walk_min_change[1,]
-best_results <- best_results[6:ncol(best_results)]
+best_results <- as.data.frame(best_results[6:ncol(best_results)])
 best_results <- best_results[,best_results!="NA"]
 best_results
 ```
 
 ```
-##     S100A9 HLA-DQB1 CLEC9A HLA-DRA HLA-DPA1 HLA-DPB1 HLA-DRB1 CLEC10A   VCAN
-## 127 perc99    perc1  perc1   perc1    perc1    perc1    perc1   perc1 perc99
-##      IRS2 CXCL8
-## 127 perc1 perc1
+##   HLA.DPB1 S100A9
+## 1    perc1 perc99
 ```
 
-Then we modify the rna expression matrix to fool the classifier,
-and we check it successfully changed the classification.
+Then we modify the rna expression matrix to fool the classifier:
 
 ```r
-min_change_attack_rna_matrix <- mat_pbmc
+min_change_attack_rna_matrix <- test_4k
 for ( i in seq_len(length(colnames(best_results)))){
     gene2modif <- colnames(best_results)[i]
+    gene2modif <- str_replace(gene2modif, "\\.", "-")
     modif <- best_results[1,i]
     min_change_attack_rna_matrix <- advModifications(min_change_attack_rna_matrix,
-        gene2modif, cell_types, "DC", advMethod=modif)
+        gene2modif, colData(test_4k)$celltypes, "DC", advMethod=modif, argForClassif="SingleCellExperiment")
 }
+```
 
-res_classif <- CHETAHClassifier(min_change_attack_rna_matrix, cell_types, "DC")
+And we check it successfully changed the classification.
+
+```r
+res_classif <- CHETAHClassifier(min_change_attack_rna_matrix, colData(test_4k)$celltypes, "DC")
+```
+
+
+```r
 res_classif
 ```
 
 ```
-## [1] "CD14+ Mono" "0.46875"
+## [1] "CD14+ Mono" "0.421875"
 ```
 
 
@@ -154,13 +221,13 @@ sessionInfo()
 ```
 
 ```
-## R version 4.2.0 (2022-04-22)
+## R version 4.3.0 (2023-04-21)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 20.04.4 LTS
+## Running under: Ubuntu 22.04.1 LTS
 ## 
 ## Matrix products: default
-## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
-## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 
+## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
 ## 
 ## locale:
 ##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
@@ -170,93 +237,85 @@ sessionInfo()
 ##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
 ## [11] LC_MEASUREMENT=fr_FR.UTF-8 LC_IDENTIFICATION=C       
 ## 
+## time zone: Europe/Paris
+## tzcode source: system (glibc)
+## 
 ## attached base packages:
 ## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
 ## [8] base     
 ## 
 ## other attached packages:
-##  [1] SeuratObject_4.1.3          Seurat_4.3.0               
-##  [3] CHETAH_1.12.1               ggplot2_3.4.1              
-##  [5] TENxPBMCData_1.14.0         HDF5Array_1.24.2           
-##  [7] rhdf5_2.40.0                DelayedArray_0.22.0        
-##  [9] Matrix_1.5-3                SingleCellExperiment_1.18.1
-## [11] SummarizedExperiment_1.26.1 Biobase_2.56.0             
-## [13] GenomicRanges_1.48.0        GenomeInfoDb_1.32.4        
-## [15] IRanges_2.30.1              S4Vectors_0.34.0           
-## [17] BiocGenerics_0.42.0         MatrixGenerics_1.8.1       
-## [19] matrixStats_0.63.0          adverSCarial_0.99.0        
-## [21] BiocStyle_2.24.0           
+##  [1] stringr_1.5.0               scran_1.28.1               
+##  [3] scater_1.28.0               scuttle_1.10.1             
+##  [5] CHETAH_1.16.0               ggplot2_3.4.2              
+##  [7] TENxPBMCData_1.18.0         HDF5Array_1.28.1           
+##  [9] rhdf5_2.44.0                DelayedArray_0.26.2        
+## [11] S4Arrays_1.0.4              Matrix_1.5-4.1             
+## [13] SingleCellExperiment_1.22.0 SummarizedExperiment_1.30.1
+## [15] Biobase_2.60.0              GenomicRanges_1.52.0       
+## [17] GenomeInfoDb_1.36.0         IRanges_2.34.0             
+## [19] S4Vectors_0.38.1            BiocGenerics_0.46.0        
+## [21] MatrixGenerics_1.12.0       matrixStats_0.63.0         
+## [23] adverSCarial_0.99.20       
 ## 
 ## loaded via a namespace (and not attached):
-##   [1] AnnotationHub_3.4.0           corrplot_0.92                
-##   [3] BiocFileCache_2.4.0           igraph_1.4.1                 
-##   [5] plyr_1.8.8                    lazyeval_0.2.2               
-##   [7] sp_1.6-0                      splines_4.2.0                
-##   [9] listenv_0.9.0                 scattermore_0.8              
-##  [11] digest_0.6.31                 htmltools_0.5.4              
-##  [13] viridis_0.6.2                 fansi_1.0.4                  
-##  [15] magrittr_2.0.3                memoise_2.0.1                
-##  [17] tensor_1.5                    cluster_2.1.4                
-##  [19] ROCR_1.0-11                   limma_3.52.4                 
-##  [21] globals_0.16.2                Biostrings_2.64.1            
-##  [23] spatstat.sparse_3.0-0         colorspace_2.1-0             
-##  [25] blob_1.2.3                    rappdirs_0.3.3               
-##  [27] ggrepel_0.9.3                 xfun_0.37                    
-##  [29] dplyr_1.1.0                   crayon_1.5.2                 
-##  [31] RCurl_1.98-1.10               jsonlite_1.8.4               
-##  [33] spatstat.data_3.0-0           progressr_0.13.0             
-##  [35] zoo_1.8-11                    survival_3.5-3               
-##  [37] glue_1.6.2                    polyclip_1.10-4              
-##  [39] gtable_0.3.1                  zlibbioc_1.42.0              
-##  [41] XVector_0.36.0                leiden_0.4.3                 
-##  [43] Rhdf5lib_1.18.2               future.apply_1.10.0          
-##  [45] abind_1.4-5                   scales_1.2.1                 
-##  [47] pheatmap_1.0.12               DBI_1.1.3                    
-##  [49] spatstat.random_3.1-3         miniUI_0.1.1.1               
-##  [51] Rcpp_1.0.10                   viridisLite_0.4.1            
-##  [53] xtable_1.8-4                  reticulate_1.28              
-##  [55] bit_4.0.5                     htmlwidgets_1.6.1            
-##  [57] httr_1.4.5                    RColorBrewer_1.1-3           
-##  [59] ellipsis_0.3.2                ica_1.0-3                    
-##  [61] pkgconfig_2.0.3               uwot_0.1.14                  
-##  [63] deldir_1.0-6                  sass_0.4.5                   
-##  [65] dbplyr_2.3.1                  utf8_1.2.3                   
-##  [67] tidyselect_1.2.0              rlang_1.0.6                  
-##  [69] reshape2_1.4.4                later_1.3.0                  
-##  [71] AnnotationDbi_1.58.0          munsell_0.5.0                
-##  [73] BiocVersion_3.15.2            tools_4.2.0                  
-##  [75] cachem_1.0.7                  cli_3.6.0                    
-##  [77] generics_0.1.3                RSQLite_2.3.0                
-##  [79] ExperimentHub_2.4.0           ggridges_0.5.4               
-##  [81] evaluate_0.20                 stringr_1.5.0                
-##  [83] fastmap_1.1.1                 goftest_1.2-3                
-##  [85] yaml_2.3.7                    bioDist_1.68.0               
-##  [87] knitr_1.42                    bit64_4.0.5                  
-##  [89] fitdistrplus_1.1-8            purrr_1.0.1                  
-##  [91] RANN_2.6.1                    KEGGREST_1.36.3              
-##  [93] dendextend_1.16.0             nlme_3.1-162                 
-##  [95] pbapply_1.7-0                 future_1.31.0                
-##  [97] mime_0.12                     compiler_4.2.0               
-##  [99] plotly_4.10.1                 filelock_1.0.2               
-## [101] curl_5.0.0                    png_0.1-8                    
-## [103] interactiveDisplayBase_1.34.0 spatstat.utils_3.0-1         
-## [105] tibble_3.1.8                  bslib_0.4.2                  
-## [107] stringi_1.7.12                lattice_0.20-45              
-## [109] vctrs_0.5.2                   pillar_1.8.1                 
-## [111] lifecycle_1.0.3               rhdf5filters_1.8.0           
-## [113] BiocManager_1.30.20           spatstat.geom_3.0-6          
-## [115] lmtest_0.9-40                 jquerylib_0.1.4              
-## [117] RcppAnnoy_0.0.20              irlba_2.3.5.1                
-## [119] data.table_1.14.8             cowplot_1.1.1                
-## [121] bitops_1.0-7                  patchwork_1.1.2              
-## [123] httpuv_1.6.9                  R6_2.5.1                     
-## [125] bookdown_0.32                 promises_1.2.0.1             
-## [127] KernSmooth_2.23-20            gridExtra_2.3                
-## [129] parallelly_1.34.0             codetools_0.2-19             
-## [131] MASS_7.3-57                   withr_2.5.0                  
-## [133] sctransform_0.3.5             GenomeInfoDbData_1.2.8       
-## [135] parallel_4.2.0                grid_4.2.0                   
-## [137] tidyr_1.3.0                   rmarkdown_2.20               
-## [139] Rtsne_0.16                    spatstat.explore_3.0-6       
-## [141] shiny_1.7.4
+##   [1] RColorBrewer_1.1-3            jsonlite_1.8.4               
+##   [3] magrittr_2.0.3                ggbeeswarm_0.7.2             
+##   [5] farver_2.1.1                  corrplot_0.92                
+##   [7] zlibbioc_1.46.0               vctrs_0.6.2                  
+##   [9] memoise_2.0.1                 DelayedMatrixStats_1.22.0    
+##  [11] RCurl_1.98-1.12               htmltools_0.5.5              
+##  [13] AnnotationHub_3.8.0           curl_5.0.0                   
+##  [15] BiocNeighbors_1.18.0          Rhdf5lib_1.22.0              
+##  [17] htmlwidgets_1.6.2             plyr_1.8.8                   
+##  [19] plotly_4.10.1                 cachem_1.0.8                 
+##  [21] igraph_1.4.2                  mime_0.12                    
+##  [23] lifecycle_1.0.3               pkgconfig_2.0.3              
+##  [25] rsvd_1.0.5                    R6_2.5.1                     
+##  [27] fastmap_1.1.1                 GenomeInfoDbData_1.2.10      
+##  [29] shiny_1.7.4                   digest_0.6.31                
+##  [31] colorspace_2.1-0              AnnotationDbi_1.62.1         
+##  [33] dqrng_0.3.0                   irlba_2.3.5.1                
+##  [35] ExperimentHub_2.8.0           RSQLite_2.3.1                
+##  [37] beachmat_2.16.0               labeling_0.4.2               
+##  [39] filelock_1.0.2                fansi_1.0.4                  
+##  [41] httr_1.4.6                    compiler_4.3.0               
+##  [43] bit64_4.0.5                   withr_2.5.0                  
+##  [45] BiocParallel_1.34.1           viridis_0.6.3                
+##  [47] DBI_1.1.3                     highr_0.10                   
+##  [49] dendextend_1.17.1             rappdirs_0.3.3               
+##  [51] bluster_1.10.0                tools_4.3.0                  
+##  [53] vipor_0.4.5                   beeswarm_0.4.0               
+##  [55] interactiveDisplayBase_1.38.0 httpuv_1.6.11                
+##  [57] glue_1.6.2                    rhdf5filters_1.12.1          
+##  [59] promises_1.2.0.1              grid_4.3.0                   
+##  [61] cluster_2.1.4                 reshape2_1.4.4               
+##  [63] generics_0.1.3                gtable_0.3.3                 
+##  [65] tidyr_1.3.0                   data.table_1.14.8            
+##  [67] metapod_1.8.0                 BiocSingular_1.16.0          
+##  [69] ScaledMatrix_1.8.1            utf8_1.2.3                   
+##  [71] XVector_0.40.0                RcppAnnoy_0.0.20             
+##  [73] ggrepel_0.9.3                 BiocVersion_3.17.1           
+##  [75] pillar_1.9.0                  limma_3.56.1                 
+##  [77] later_1.3.1                   dplyr_1.1.2                  
+##  [79] BiocFileCache_2.8.0           lattice_0.21-8               
+##  [81] bit_4.0.5                     tidyselect_1.2.0             
+##  [83] locfit_1.5-9.7                Biostrings_2.68.1            
+##  [85] knitr_1.42                    gridExtra_2.3                
+##  [87] edgeR_3.42.2                  xfun_0.39                    
+##  [89] statmod_1.5.0                 pheatmap_1.0.12              
+##  [91] stringi_1.7.12                lazyeval_0.2.2               
+##  [93] yaml_2.3.7                    evaluate_0.21                
+##  [95] codetools_0.2-19              tibble_3.2.1                 
+##  [97] BiocManager_1.30.20           cli_3.6.1                    
+##  [99] uwot_0.1.14                   xtable_1.8-4                 
+## [101] munsell_0.5.0                 Rcpp_1.0.10                  
+## [103] bioDist_1.72.0                dbplyr_2.3.2                 
+## [105] png_0.1-8                     parallel_4.3.0               
+## [107] ellipsis_0.3.2                blob_1.2.4                   
+## [109] sparseMatrixStats_1.12.0      bitops_1.0-7                 
+## [111] viridisLite_0.4.2             scales_1.2.1                 
+## [113] purrr_1.0.1                   crayon_1.5.2                 
+## [115] rlang_1.1.1                   cowplot_1.1.1                
+## [117] KEGGREST_1.40.0
 ```

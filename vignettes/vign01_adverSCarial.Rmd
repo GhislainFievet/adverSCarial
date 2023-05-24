@@ -1,7 +1,7 @@
 ---
 title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
     classifiers to adversarial attacks"
-shorttitle: "adverSCarial"
+shorttitle: adverSCarial
 author: Ghislain FIEVET <ghislain.fievet@gmail.com>
 package: adverSCarial
 abstract: >
@@ -18,7 +18,7 @@ output:
         toc: true
         toc_depth: 2
 vignette: >
-  %\VignetteIndexEntry{adverSCarial}
+  %\VignetteIndexEntry{Vign01_adverSCarial}
   %\VignetteEngine{knitr::knitr}
   %\VignetteEncoding{UTF-8}
 ---
@@ -56,24 +56,25 @@ Load libraries
 
 ```{r load libraries, warning = FALSE, message=FALSE}
 library(adverSCarial)
+library(loomR)
 ```
 
 Load a pbmc raw data
 
 ```{r min change attack, message=FALSE, warning = FALSE}
-matPbmc <- system.file("extdata", "pbmc_short.tsv", package="adverSCarial")
-matPbmc <- read.table(matPbmc, sep="\t")
+pbmcPath <- system.file("extdata", "pbmc_short.loom", package="adverSCarial")
+lfile <- connect(filename = pbmcPath, mode = "r+", skip.validate = TRUE)
+matPbmc <- as.data.frame(lfile[['matrix']][,][[1]])
 ```
 
 ```{r visualize1, message=FALSE, warning = FALSE}
-head(matPbmc)
+matPbmc[1:5, 1:5]
 ```
 
 
 and its cell type classification.
 ```{r load annnots, message=FALSE, warning = FALSE}
-cellTypes <- system.file("extdata", "cell_type_short.tsv", package="adverSCarial")
-cellTypes <- read.table(cellTypes, sep="\t")$cell_type
+cellTypes <- lfile[["row_attrs/cell_type"]][]
 ```
 
 ```{r visualize2, message=FALSE, warning = FALSE}
@@ -110,23 +111,23 @@ Computation times can be lengthy, we use the `return_first_found` argument to re
 We can specify the `change_type = "not_na"` argument to indicate that we want the attack to misclassify the cluster as an existing cell type, rather than as NA.
 
 ```{r search min change attack, message=FALSE, warning = FALSE}
-advMinChange = advMinChange(matPbmc, cellTypes, "DC",
+genesMinChange = advMinChange(matPbmc, cellTypes, "DC",
                         MClassifier, exclGenes = markers, advMethod = "perc99",
                         returnFirstFound = TRUE, changeType = "not_na",
                         firstDichot = 10)
 ```
 ```{r search min change attack bis, warning = FALSE}
-advMinChange
+genesMinChange
 ```
 
-The function found that modifying the single gene `names(advMinChange)[1]` with the `perc99` modification on the cluster leads to a new classification, `advMinChange[[1]][1]`.
+The function found that modifying the single gene `names(genesMinChange@values)[1]` with the `perc99` modification on the cluster leads to a new classification, `genesMinChange@values[[1]][1]`.
 
 Let's run this attack and verify if it is successful.
 
 First we modify the `matPbmc` matrix on the target cluster.
 
 ```{r run min change attack, message=FALSE, warning = FALSE}
-matAdver <- advModifications(matPbmc, names(advMinChange)[1], cellTypes, "DC")
+matAdver <- advModifications(matPbmc, names(genesMinChange@values)[1], cellTypes, "DC")
 ```
 
 Then classify the "DC" cluster with `MClassifier`.
@@ -146,22 +147,22 @@ The function `advMaxChange` runs a dichotomic search of gene subsets, given the 
 The `maxSplitSize` argument is the maximum size of dichotomic slices. Set to 1 to have better results, but it will take longer to compute.
 
 ```{r search max change attack, warning = FALSE, message=FALSE}
-advMaxChange <- advMaxChange(matPbmc, cellTypes, "DC", MClassifier,
+genesMaxChange <- advMaxChange(matPbmc, cellTypes, "DC", MClassifier,
                     exclGenes = markers, advMethod = "perc99")
 ```
 ```{r search max change attack bis, warning = FALSE}
-length(advMaxChange)
+length(genesMaxChange@values)
 ```
 
 
-The function found `length(advMaxChange)` genes that you can modify with the `perc99` modification, and the cluster is still classified as `DC`.
+The function found `length(genesMaxChange@values)` genes that you can modify with the `perc99` modification, and the cluster is still classified as `DC`.
 
 Let's run this attack and verify if it is successful.
 
 First we modify the `matPbmc` matrix on the target cluster, on the genes previously determined.
 
 ```{r run max change attack, message=FALSE, warning=FALSE}
-matMaxAdver <- advModifications(matPbmc, advMaxChange, cellTypes, "DC")
+matMaxAdver <- advModifications(matPbmc, genesMaxChange@values, cellTypes, "DC")
 ```
 
 Then we verify that classification is still `DC`.

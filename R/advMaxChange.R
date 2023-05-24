@@ -27,8 +27,8 @@
 #' to have the maximum number of genes for the max change attack. This function
 #' is used by the 'overMaxChange' function with a default argument value of 100
 #' to increase speed, and still returns significant results.
-#' @param exprs a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns.
+#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
+#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
 #' @param classifier a classifier in the suitable format.
@@ -53,6 +53,8 @@
 #' belongs to the following list: `full_row_fct`, `target_row_fct`,
 #' `target_matrix_fct`, `full_matrix_fct`
 #' @param maxSplitSize max size of dichotomic slices.
+#' @param argForClassif the type of the first argument to feed to the
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a character vector of genes you can modify on a cluster without
 #' modifying its classification
@@ -71,9 +73,10 @@
 advMaxChange <- function(exprs, clusters, target, classifier,
                         exclGenes = c(), genes = c(), advMethod = "perc99",
                         advFixedValue = 3, advFct = NULL,
-                        maxSplitSize = 1, verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
-        stop("The argument exprs must be a matrix or a data.frame")
+                        maxSplitSize = 1, argForClassif = 'data.frame',
+                        verbose = FALSE) {
+    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
+        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -96,8 +99,14 @@ advMaxChange <- function(exprs, clusters, target, classifier,
     if (!is.numeric(maxSplitSize)){
         stop("The argument maxSplitSize must be numeric.")
     }
+    if (!is.character(argForClassif)) {
+        stop("The argument argForClassif must be character: 'data.frame' or 'SingleCellExperiment'.")
+    }
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
+    }
+    if (is(exprs,'SingleCellExperiment') ){
+        exprs <- as.matrix(t(counts(exprs)))
     }
 
     if (maxSplitSize < 1){ maxSplitSize <- 1 }
@@ -120,14 +129,15 @@ advMaxChange <- function(exprs, clusters, target, classifier,
         clusters, target, classifier,
         advMethod = advMethod,
         advFixedValue = advFixedValue, advFct = advFct,
-        maxSplitSize = maxSplitSize, verbose = verbose
+        maxSplitSize = maxSplitSize, argForClassif = argForClassif,
+        verbose = verbose
     )
-    lResults
+    new("advChar", values=lResults)
 }
 
 .dichotMaxSameType <- function(lResults, cGeneSplitValue, exprs,
                 clusters, target, classifier, advMethod,
-                advFixedValue, advFct, maxSplitSize, verbose = TRUE){
+                advFixedValue, advFct, maxSplitSize, argForClassif, verbose = TRUE){
         if (verbose) { message("same cellType") }
         if (length(lResults) == 0) {
             lResults <- cGeneSplitValue
@@ -147,7 +157,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                 target, classifier,
                 advMethod = advMethod,
                 advFixedValue = advFixedValue, advFct = advFct,
-                verbose = verbose
+                argForClassif = argForClassif, verbose = verbose
             )
             concatCellType <- modObj[1]
             if (concatCellType == target) {
@@ -166,8 +176,11 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                         classifier,
                         lResults = lResults,
                         advMethod = advMethod,
-                        advFixedValue = advFixedValue, advFct = advFct,
-                        maxSplitSize = maxSplitSize, verbose = verbose
+                        advFixedValue = advFixedValue,
+                        advFct = advFct,
+                        maxSplitSize = maxSplitSize,
+                        argForClassif = argForClassif,
+                        verbose = verbose
                     )
                 }
             }
@@ -181,6 +194,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                                     advMethod,
                                     advFixedValue,
                                     advFct, maxSplitSize,
+                                    argForClassif,
                                     verbose){
     if (length(cGeneSplitValue) != 0) {
         if (verbose) {
@@ -191,6 +205,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
             clusters, target, classifier,
             advMethod = advMethod,
             advFixedValue = advFixedValue, advFct = advFct,
+            argForClassif = argForClassif,
             verbose = TRUE
         )
         cellType <- modObj[1]
@@ -206,6 +221,7 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                     advMethod,
                     advFixedValue, advFct,
                     maxSplitSize,
+                    argForClassif,
                     verbose = TRUE)
     } else {
         if (verbose) { message("NOT same cellType") }
@@ -214,21 +230,36 @@ advMaxChange <- function(exprs, clusters, target, classifier,
                 unname(cGeneSplitValue), clusters, target,
                 classifier, lResults = lResults, advMethod = advMethod,
                 advFixedValue = advFixedValue, advFct = advFct,
-                maxSplitSize = maxSplitSize, verbose = verbose
+                maxSplitSize = maxSplitSize, argForClassif = argForClassif,
+                verbose = verbose
             )
         }
     }
     lResults
 }
 
+.custSplit <- function(v1, v2){
+    result <- list()
+    for ( i in seq_along(v1)){
+        strKey = as.character(v2[(i %% length(v2)) + 1])
+        if ( !strKey %in% names(result)){
+            result[[strKey]] = v1[i]
+        } else {
+            result[[strKey]] = c(result[[strKey]], v1[i])
+        }
+    }
+    result
+}
 
 .predictionDichotMaxChange <- function(exprs, genes, clusters, target,
                                     classifier, lResults = c(),
                                     advMethod = "perc99",
                                     advFixedValue = 3,
-                                    advFct = NULL, maxSplitSize = 1,
+                                    advFct = NULL,
+                                    maxSplitSize = 1,
+                                    argForClassif = argForClassif,
                                     verbose = TRUE) {
-    cGeneSplit <- split(unlist(genes), c(1,2))
+    cGeneSplit <- .custSplit(unlist(genes), c(1,2))
     message(paste0("genes size: ", length(unlist(genes))))
     message(paste0("current gene results length: ", length(lResults)))
     # Random order for each reccursion
@@ -236,10 +267,10 @@ advMaxChange <- function(exprs, clusters, target, classifier,
     cGeneSplit <- cGeneSplit[randomIndex]
     lResults <- .dichotMaxSplit(lResults, unname(unlist(cGeneSplit[1])),
                     exprs, genes, clusters, target, classifier, advMethod,
-                    advFixedValue, advFct, maxSplitSize, verbose)
+                    advFixedValue, advFct, maxSplitSize, argForClassif, verbose)
     lResults <- .dichotMaxSplit(lResults, unname(unlist(cGeneSplit[2])),
                 exprs, genes, clusters, target, classifier, advMethod,
-                advFixedValue, advFct, maxSplitSize, verbose)
+                advFixedValue, advFct, maxSplitSize, argForClassif, verbose)
     lResults
 }
 

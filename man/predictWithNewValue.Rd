@@ -3,8 +3,8 @@
 \name{predictWithNewValue}
 \alias{predictWithNewValue}
 \title{Returns a classification and an odd value from a
-RNA expression matrix, for given genes, for a given cluster,
-for a given modification.}
+RNA expression matrix or a SingleCellExperiment object,
+for given genes, for a given cluster, for a given modification.}
 \usage{
 predictWithNewValue(
   exprs,
@@ -15,12 +15,13 @@ predictWithNewValue(
   advMethod = "perc99",
   advFixedValue = 3,
   advFct = NULL,
+  argForClassif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns.}
+\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
+cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
 
 \item{genes}{the character vector of genes to modify}
 
@@ -50,6 +51,9 @@ advMethod=\code{fixed}}
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
+\item{argForClassif}{the type of the first argument to feed to the
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
@@ -57,8 +61,8 @@ a vector of the classification, and the associated odd
 }
 \description{
 Returns a classification and an odd value from a
-RNA expression matrix, for given genes, for a given cluster,
-for a given modification.
+RNA expression matrix or a SingleCellExperiment object,
+for given genes, for a given cluster, for a given modification.
 }
 \details{
 This function aims to concatenate the following actions:
@@ -72,7 +76,8 @@ This is a function widely used in the other functions of the package.
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }
-rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+rna_expression <- data.frame(CD4=c(0,0,0,0),
+     CD8A=c(1,1,1,1),
      CD8B=c(2,2,3,3))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")

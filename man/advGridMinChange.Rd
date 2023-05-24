@@ -13,13 +13,14 @@ advGridMinChange(
   genes,
   modifications = list(c("perc1"), c("perc99")),
   returnFirstFound = FALSE,
+  argForClassif = "data.frame",
   verbose = FALSE,
   iamsure = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns.}
+\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
+cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
@@ -44,6 +45,9 @@ The function returns a vector with the classification result, and a score.}
 
 \item{returnFirstFound}{set to TRUE to return result when a
 the first misclassification is found}
+
+\item{argForClassif}{the type of the first argument to feed to the
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 

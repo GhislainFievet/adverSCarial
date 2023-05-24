@@ -23,8 +23,8 @@
 #' my_modifications = list(c("perc1"),
 #'                         c("fixed", 1000),
 #'                         c("full_matrix_fct", myFct))
-#' @param exprs a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns.
+#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
+#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
 #' @param classifier a classifier in the suitable format.
@@ -43,6 +43,8 @@
 #' @param modifications the list of the modifications to study
 #' @param returnFirstFound set to TRUE to return result when a
 #' the first misclassification is found
+#' @param argForClassif the type of the first argument to feed to the
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @param iamsure logical, prevents from expansive calculations
 #' when `genes` list is too long, set to `TRUE` to run anyway.
@@ -73,9 +75,10 @@
 #' @export
 advGridMinChange <- function(exprs, clusters, target, classifier,
                 genes, modifications = list(c("perc1"), c("perc99")),
-                returnFirstFound = FALSE, verbose = FALSE, iamsure = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
-        stop("The argument exprs must be a matrix or a data.frame.")
+                returnFirstFound = FALSE, argForClassif = 'data.frame',
+                verbose = FALSE, iamsure = FALSE) {
+    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
+        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -95,11 +98,18 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     if (!is.logical(returnFirstFound)){
         stop("The argument returnFirstFound must be logical.")
     }
+    if (!is.character(argForClassif)) {
+        stop("The argument argForClassif must be character: 'data.frame' or 'SingleCellExperiment'.")
+    }
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
     if (!is.logical(iamsure)){
         stop("The argument iamsure must be logical.")
+    }
+
+    if (is(exprs,'SingleCellExperiment') ){
+        exprs <- as.matrix(t(counts(exprs)))
     }
 
     functionResults <- data.frame(matrix(ncol = length(genes) + 5, nrow = 0))
@@ -113,7 +123,8 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     colnames(results) <- c(genes, "prediction", "odd"); i <- 1
     while (i <= nrow(testsGrid)) {
         message("Running combination: ", i, " on ", nrow(testsGrid))
-        exprsTemp <- exprs; rowResults <- c()
+        exprsTemp <- exprs
+        rowResults <- c()
         for (geneInd in seq_along(genes)) {
             modifInd <- testsGrid[i, geneInd]
             if (modifInd != length(modifications) + 1) {
@@ -130,14 +141,16 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
                         paste(modifications[[modifInd]], collapse = " "))
             } else { rowResults <- c(rowResults, "NA")}
         }
+        if ( argForClassif == 'SingleCellExperiment'){
+            exprsTemp <- SingleCellExperiment(assays = list(counts = t(exprsTemp)))
+        }
         classResults <- classifier(exprsTemp, clusters, target)
         rowResults <- c(rowResults, classResults[1], classResults[2])
         results <- rbind(results, rowResults)
         colnames(results) <- c(genes, "prediction", "odd")
         ifelse(classResults[1] == target, i <- i + 1, i <- nrow(testsGrid)+1)
     }
-    results$genesModified <-
-        length(genes) - apply(results, 1, function(x) sum(x == "NA"))
+    results$genesModified <- length(genes) - apply(results, 1, function(x) sum(x == "NA"))
     results$typeModified <- results$prediction != target
     results <- results[, c( "prediction", "odd",
             "genesModified", "typeModified", genes)]

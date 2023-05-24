@@ -2,8 +2,8 @@
 % Please edit documentation in R/advModifications.R
 \name{advModifications}
 \alias{advModifications}
-\title{Returns a modified RNA expression matrix, for a given cluster,
-for a given modification.}
+\title{Returns a modified RNA expression matrix, or a modified SingleCellExperiment,
+for a given cluster, for a given modification.}
 \usage{
 advModifications(
   exprs,
@@ -13,12 +13,13 @@ advModifications(
   advMethod = "perc99",
   advFixedValue = 3,
   advFct = NULL,
+  argForClassif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns.}
+\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
+cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
 
 \item{genes}{the character vector of genes to modify}
 
@@ -35,6 +36,9 @@ advMethod=\code{fixed}}
 belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
+\item{argForClassif}{the type of the first argument to feed to the
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
@@ -42,8 +46,8 @@ the matrix or a data.frame exprs modified on asked genes
 with the specified modification
 }
 \description{
-Returns a modified RNA expression matrix, for a given cluster,
-for a given modification.
+Returns a modified RNA expression matrix, or a modified SingleCellExperiment,
+for a given cluster, for a given modification.
 }
 \details{
 The motivation for this function is to standardize the modifications

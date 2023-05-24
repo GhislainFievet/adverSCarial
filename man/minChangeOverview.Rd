@@ -18,12 +18,13 @@ minChangeOverview(
   firstDichot = 100,
   maxSplitSize = 100,
   changeType = "any",
+  argForClassif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns.}
+\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
+cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
@@ -63,6 +64,9 @@ the dichotomic search}
 
 \item{changeType}{\code{any} consider each misclassification,
 \code{not_na} consider each misclassification but NA.}
+
+\item{argForClassif}{the type of the first argument to feed to the
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }

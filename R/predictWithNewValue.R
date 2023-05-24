@@ -1,13 +1,13 @@
 #' Returns a classification and an odd value from a
-#' RNA expression matrix, for given genes, for a given cluster,
-#' for a given modification.
+#' RNA expression matrix or a SingleCellExperiment object,
+#' for given genes, for a given cluster, for a given modification.
 #'
 #' @details This function aims to concatenate the following actions:
 #' - modify the RNA gene expression
 #' - classify the result
 #' This is a function widely used in the other functions of the package.
-#' @param exprs a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns.
+#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
+#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
 #' @param genes the character vector of genes to modify
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
@@ -29,13 +29,16 @@
 #' @param advFct the function to use in case advMethod
 #' belongs to the following list: `full_row_fct`, `target_row_fct`,
 #' `target_matrix_fct`, `full_matrix_fct`
+#' @param argForClassif the type of the first argument to feed to the
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a vector of the classification, and the associated odd
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }
-#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#' rna_expression <- data.frame(CD4=c(0,0,0,0),
+#'      CD8A=c(1,1,1,1),
 #'      CD8B=c(2,2,3,3))
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
@@ -46,9 +49,11 @@
 predictWithNewValue <- function(exprs, genes, clusters, target,
                                 classifier, advMethod = "perc99",
                                 advFixedValue = 3,
-                                advFct = NULL, verbose = FALSE) {
-    if ( !is(exprs, 'matrix') && !is(exprs,'data.frame')){
-        stop("The argument exprs must be a matrix or a data.frame.")
+                                advFct = NULL,
+                                argForClassif = 'data.frame',
+                                verbose = FALSE) {
+    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
+        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
     }
     if (!is.character(genes)) {
         stop("The argument genes must be character or vector of character.")
@@ -65,6 +70,9 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
     if (!is.character(advMethod)) {
         stop("The argument advMethod must be character.")
     }
+    if (!is.character(argForClassif)) {
+        stop("The argument argForClassif must be character: 'data.frame' or 'SingleCellExperiment'.")
+    }
     if (!is.logical(verbose)){
         stop("The argument verbose must be logical.")
     }
@@ -74,11 +82,14 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
             " genes for cluster ", target)
     }
 
-    modifExprs <- advModifications(exprs, genes, clusters,
+    modifExprs <- advModifications(exprs,
+        genes,
+        clusters,
         target,
         advMethod = advMethod,
         advFixedValue = advFixedValue,
-        advFct = advFct
+        advFct = advFct,
+        argForClassif = argForClassif
     )
 
     classifier(modifExprs, clusters, target)
