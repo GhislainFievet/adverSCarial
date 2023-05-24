@@ -132,7 +132,11 @@ advMaxChange <- function(exprs, clusters, target, classifier,
         maxSplitSize = maxSplitSize, argForClassif = argForClassif,
         verbose = verbose
     )
-    new("advChar", values=lResults)
+    if ( is.null(lResults)){
+        NULL
+    } else {
+        new("advChar", values=lResults)
+    }
 }
 
 .dichotMaxSameType <- function(lResults, cGeneSplitValue, exprs,

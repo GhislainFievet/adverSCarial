@@ -165,7 +165,10 @@ maxChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
                     cellType, classifier, advMethod = mod1,
                     advFixedValue = mod2, advFct = mod2,
                     maxSplitSize = maxSplitSize, exclGenes = exclGenes,
-                    genes = genes, argForClassif = argForClassif, verbose = verbose)@values
+                    genes = genes, argForClassif = argForClassif, verbose = verbose)
+                if (!is.null(maxChangeGenes)){
+                    maxChangeGenes <- maxChangeGenes@values
+                }
             }
             resultLength <- length(maxChangeGenes)
             if (verbose) {
@@ -204,7 +207,10 @@ maxChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             advFixedValue = advFixedValue, advFct = advFct,
             maxSplitSize = maxSplitSize, exclGenes = exclGenes,
             genes = genes, argForClassif = argForClassif, verbose = verbose
-        )@values
+        )
+        if (!is.null(maxChangeGenes)){
+            maxChangeGenes <- maxChangeGenes@values
+        }
         resultLength <- length(maxChangeGenes)
         if (verbose) {
             message(paste0(

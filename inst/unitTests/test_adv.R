@@ -41,15 +41,13 @@ test_predictWithNewValue <- function(){
 test_advMaxChange <- function(){
     exprs <- data.frame(a=c(0,0,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     clusters <- c("b","b","t","t")
-    checkTrue(length(advMaxChange(exprs, clusters, "b", MyClassifier)) ==
-        3)
+    checkTrue(length(advMaxChange(exprs, clusters, "b", MyClassifier)@values) == 3)
 }
 
 test_advMinChange <- function(){
     exprs <- data.frame(a=c(0,0,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     clusters <- c("b","b","t","t")
-    checkTrue(length(advMinChange(exprs, clusters, "b", MyClassifier)) ==
-        0)
+    checkTrue(length(advMinChange(exprs, clusters, "b", MyClassifier)@values) == 0)
 }
 
 test_maxChangeOverview <- function(){

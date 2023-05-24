@@ -174,7 +174,11 @@ advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
         }
         message(paste0("Split time: ", Sys.time() - prevTime))
     }), recursive = FALSE)
-    new("advList", values=lSplitsResults)
+    if ( is.null(lSplitsResults)){
+        NULL
+    } else {
+        new("advList", values=lSplitsResults)
+    }
 }
 
 .dichotMinSplit <- function(lResults, cGeneSplitValue, exprs,

@@ -115,8 +115,7 @@ advModifications <- function(exprs, genes, clusters,
     if (advMethod == "fixed") {
         numGenes <- unlist(lapply(unique(genes), function(myGene){
             if (is(exprs[, myGene], "numeric")) {
-                numGenes <- append(numGenes, myGene)
-                return(numGenes)
+                return(myGene)
             }
         }))
         exprs[cellMask, numGenes] <- advFixedValue
