@@ -31,14 +31,16 @@ de Kanter JK, Lijnzaad P, Candelli T, Margaritis T, Holstege FCP (2019). “CHET
 # Load data
   
 
-```r
+```{r load various libraries 1, message=FALSE}
 library(adverSCarial)
 library(TENxPBMCData)
 library(CHETAH)
 library(scater)
 library(scran)
+```
 
-# First let's load a train and a test dataset.
+First let's load a train and a test dataset.
+```r
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
 

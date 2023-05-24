@@ -25,7 +25,7 @@ function to shorten the list as much as possible.
 # Load data
   
 
-```r
+```{r load various libraries 2, message=FALSE}
 library(adverSCarial)
 library(TENxPBMCData)
 library(CHETAH)
@@ -33,6 +33,7 @@ library(scater)
 library(scran)
 library(stringr)
 
+```r
 # We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
