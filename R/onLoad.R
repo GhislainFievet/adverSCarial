@@ -1,5 +1,13 @@
 # Define show methods for large vectors and data.frames
 .onLoad <- function(libname, pkgname){
+    methods::setClass("advChar",
+         slots = list(
+           values = "character"
+         ))
+    methods::setClass("advList",
+         slots = list(
+           values = "list"
+         ))
     setMethod("show", "advChar",
           function(x) {
               if ( length(x@values)<10){
