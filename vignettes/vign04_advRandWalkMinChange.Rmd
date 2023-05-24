@@ -32,6 +32,7 @@ library(CHETAH)
 library(scater)
 library(scran)
 library(stringr)
+```
 
 ```r
 # We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.

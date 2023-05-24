@@ -64,6 +64,7 @@ Load a pbmc raw data
 ```{r min change attack, message=FALSE, warning = FALSE}
 pbmcPath <- system.file("extdata", "pbmc_short.loom", package="adverSCarial")
 lfile <- import(pbmcPath, type="SingleCellLoomExperiment")
+```
 
 ```{r extract matrix data}
 matPbmc <- as.data.frame(counts(lfile))
