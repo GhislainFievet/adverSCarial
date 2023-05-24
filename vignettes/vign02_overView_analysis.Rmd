@@ -21,16 +21,17 @@ vignette: >
   
 ```{r load libraries, warning = FALSE, message=FALSE}
 library(adverSCarial)
+library(LoomExperiment)
 ```
 
 ## Load RNA matrix
 ```{r min change attack, message=FALSE, warning = FALSE}
 pbmcPath <- system.file("extdata", "pbmc_short.loom", package="adverSCarial")
-lfile <- connect(filename = pbmcPath, mode = "r+", skip.validate = TRUE)
+lfile <- import(pbmcPath, type="SingleCellLoomExperiment")
 ```
 
 ```{r load table}
-matPbmc <- as.data.frame(lfile[['matrix']][,][[1]])
+matPbmc <- as.data.frame(counts(lfile))
 ```
 
 ```{r visualize1, message=FALSE, warning = FALSE}
