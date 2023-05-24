@@ -37,11 +37,8 @@ library(TENxPBMCData)
 library(CHETAH)
 library(scater)
 library(scran)
-```
 
-First let's load a `train` and a `test` dataset.
-
-```r
+# First let's load a train and a test dataset.
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
 
@@ -63,23 +60,15 @@ We annotate cells with `CHETAH`.
 input <- CHETAHclassifier(input = test_4k, ref_cells = train_3k)
 input <- Classify(input = input, 0.00001)
 colData(test_4k)$celltypes <- input$celltype_CHETAH
-```
 
-Process data.
-
-
-```r
+# Process data
 test_4k <- logNormCounts(test_4k)
 dec <- modelGeneVar(test_4k)
 hvg <- getTopHVGs(dec, prop=0.1)
 test_4k <- runPCA(test_4k, ncomponents=25, subset_row=hvg)
 test_4k <- runUMAP(test_4k, dimred = 'PCA')
-```
 
-Visualize the results
-
-
-```r
+# Plot data
 plotUMAP(test_4k, colour_by="celltypes")
 ```
 
@@ -146,11 +135,9 @@ Then we verify that classification is still `CD14+ Mono`.
 
 ```r
 rf_result <- CHETAHClassifier(test_4k_adver, colData(test_4k)$celltypes, "CD14+ Mono")
-```
-
-```r
 rf_result
 ```
+
 
 ```
 ## [1] "CD14+ Mono" "1"

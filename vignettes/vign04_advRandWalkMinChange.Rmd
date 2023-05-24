@@ -32,12 +32,8 @@ library(CHETAH)
 library(scater)
 library(scran)
 library(stringr)
-```
 
-We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.
-
-
-```r
+# We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
 
@@ -106,9 +102,6 @@ genes_4walk <- rownames(fm_t4k[['DC']][abs(fm_t4k[['DC']]$summary.logFC)>1,])
 
 # Remove the officiel markers from the candidates
 genes_4walk <- genes_4walk[!genes_4walk %in% markers]
-```
-
-```r
 genes_4walk
 ```
 
