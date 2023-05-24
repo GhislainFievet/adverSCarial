@@ -94,10 +94,12 @@ We use the `advRandWalkMinChange` function to generate a complex attack, looking
 First step is to look for a list of genes suscpetibles to move the classification. We get this list by using the `findMarkers` function from `scran`.
 
 
-```r
+```{r markers v03}
 markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
+```
 
+```r
 test_4k_subset <- test_4k[, test_4k$celltypes %in% c("CD14+ Mono", "DC")]
 fm_t4k <- findMarkers(test_4k_subset, test_4k_subset$celltypes)
 genes_4walk <- rownames(fm_t4k[['DC']][abs(fm_t4k[['DC']]$summary.logFC)>1,])
