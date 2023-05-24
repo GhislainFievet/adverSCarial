@@ -74,7 +74,7 @@ matPbmc[1:5, 1:5]
 
 and its cell type classification.
 ```{r load annnots, message=FALSE, warning = FALSE}
-cellTypes <- lfile[["row_attrs/cell_type"]][]
+cellTypes <- rowData(lfile)$cell_type
 ```
 
 ```{r visualize2, message=FALSE, warning = FALSE}

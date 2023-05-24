@@ -39,7 +39,7 @@ matPbmc[1:5,1:5]
 ```
 ## Load cell type annotations
 ```{r Load cell type annotations, message=FALSE, warning = FALSE}
-cellTypes <- lfile[["row_attrs/cell_type"]][]
+cellTypes <- rowData(lfile)$cell_type
 ```
 
 ```{r visualize2, message=FALSE, warning = FALSE}
