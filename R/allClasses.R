@@ -9,29 +9,29 @@ methods::setClass("advList",
         values = "list"
         ))
 setMethod("show", "advChar",
-        function(x) {
-            if ( length(x@values)<10){
-                print(x@values)
+        function(object) {
+            if ( length(object@values)<10){
+                print(object@values)
             } else {
-                print(paste0("Vector with ", length(x@values), " values:"))
-                if (is.null(names(x@values))){
-                    print(paste0(paste(x@values[1:10], collapse=", "), " ..."))
+                print(paste0("Vector with ", length(object@values), " values:"))
+                if (is.null(names(object@values))){
+                    print(paste0(paste(object@values[1:10], collapse=", "), " ..."))
                 } else {
-                    print(paste0(paste(paste0(names(x@values[1:5]),": ",x@values[1:5]),
+                    print(paste0(paste(paste0(names(object@values[1:5]),": ",object@values[1:5]),
                                         collapse=", "), " ..."))
                 }
             }
         })
 setMethod("show", "advList",
-        function(x) {
-            if ( length(x@values)<10){
-                print(x@values)
+        function(object) {
+            if ( length(object@values)<10){
+                print(object@values)
             } else {
-                print(paste0("Vector with ", length(x@values), " values:"))
-                if (is.null(names(x@values))){
-                    print(paste0(paste(x@values[1:10], collapse=", "), " ..."))
+                print(paste0("Vector with ", length(object@values), " values:"))
+                if (is.null(names(object@values))){
+                    print(paste0(paste(object@values[1:10], collapse=", "), " ..."))
                 } else {
-                    print(paste0(paste(paste0(names(x@values[1:5]),": ",x@values[1:5]),
+                    print(paste0(paste(paste0(names(object@values[1:5]),": ",object@values[1:5]),
                                         collapse=", "), " ..."))
                 }
             }
