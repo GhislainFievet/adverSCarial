@@ -12,6 +12,9 @@ of few thousands genes:cell_type key/values, so a specific \emph{show}
 method is associated to this class to avoid overflooding the R
 scripts outputs.
 }
+\value{
+A advList object
+}
 \examples{
 MyClassifier <- function(expr, clusters, target) {
    c("B cell", 0.9)

@@ -11,6 +11,9 @@ of the \code{advMaxChange} function. The result can be a vector
 of few thousands genes, so a specific \emph{show} method is associated to
 this class to avoid overflooding the R scripts outputs.
 }
+\value{
+A advChar object
+}
 \examples{
 MyClassifier <- function(expr, clusters, target) {
   c("T cell", 0.9)

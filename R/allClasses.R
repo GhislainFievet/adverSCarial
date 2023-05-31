@@ -5,6 +5,7 @@
 #' of few thousands genes, so a specific *show* method is associated to
 #' this class to avoid overflooding the R scripts outputs.
 #' @rdname advChar
+#' @return A advChar object
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'   c("T cell", 0.9)
@@ -49,6 +50,7 @@ setMethod("show", "advChar",
 #' method is associated to this class to avoid overflooding the R
 #' scripts outputs.
 #' @rdname advList
+#' @return A advList object
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("B cell", 0.9)
