@@ -112,7 +112,7 @@ the genes list is split in two, and the dichotomic process continues.
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {
-   c("T cell", 0.9)
+   c("B cell", 0.9)
 }
 rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
      CD8B=c(2,2,3,3))
