@@ -118,6 +118,8 @@ The function returns a dataframe with the number of genes of the max
 change attack for each modification in columns, for each cell type in rows.
 }
 \examples{
+library(DelayedArray)
+
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }

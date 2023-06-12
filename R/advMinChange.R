@@ -70,6 +70,8 @@
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a list of genes/new classification tuples
 #' @examples
+#' library(DelayedArray)
+#' 
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("B cell", 0.9)
 #' }

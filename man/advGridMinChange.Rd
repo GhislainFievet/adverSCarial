@@ -93,6 +93,8 @@ c("full_matrix_fct", myFct))
 }
 }
 \examples{
+library(DelayedArray)
+
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }

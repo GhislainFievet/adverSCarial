@@ -90,6 +90,8 @@ all genes values as input.
 }
 }
 \examples{
+library(DelayedArray)
+
 rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
      CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")

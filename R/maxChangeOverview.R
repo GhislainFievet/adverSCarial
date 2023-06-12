@@ -67,6 +67,8 @@
 #' @return a DataFrame storing the number of possible max change attacks
 #' for each cell type and each modification.
 #' @examples
+#' library(DelayedArray)
+#' 
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }

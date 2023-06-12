@@ -116,6 +116,8 @@ the genes list is split in two, and the dichotomic process continues.
 }
 }
 \examples{
+library(DelayedArray)
+
 MyClassifier <- function(expr, clusters, target) {
    c("B cell", 0.9)
 }

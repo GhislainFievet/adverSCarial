@@ -78,6 +78,8 @@ This is a widely used function in the other functions of the package.
 }
 }
 \examples{
+library(DelayedArray)
+
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }

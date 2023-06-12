@@ -111,6 +111,8 @@ needed to change the classification.
 The
 }
 \examples{
+library(DelayedArray)
+
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }

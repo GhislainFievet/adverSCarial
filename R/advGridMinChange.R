@@ -53,6 +53,8 @@
 #' when `genes` list is too long, set to `TRUE` to run anyway.
 #' @return DataFrame results of the classification of all the grid combinations
 #' @examples
+#' library(DelayedArray)
+#' 
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }

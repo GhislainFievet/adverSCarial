@@ -65,6 +65,8 @@
 #' @return a character vector of genes you can modify on a cluster without
 #' modifying its classification
 #' @examples
+#' library(DelayedArray)
+#' 
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }

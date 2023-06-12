@@ -37,6 +37,8 @@
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a vector of the classification, and the associated odd
 #' @examples
+#' library(DelayedArray)
+#' 
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }
