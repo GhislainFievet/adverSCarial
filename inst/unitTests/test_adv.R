@@ -19,7 +19,7 @@ test_advModifications <- function () {
     exprs_res1 <- data.frame(a=c(10,10,0,0), b=c(1,1,1,1), c=c(2,2,3,3))
     checkTrue( all(advModifications(exprs, genes, clusters, "b",
         advMethod = "fixed",
-        advFixedValue = 10) == exprs_res1))
+        advFixedValue = 10, argForClassif='data.frame') == exprs_res1))
     checkTrue(all(advModifications(
         data.frame(a=c(1)), "a", "a", "a") == 1))
 }
