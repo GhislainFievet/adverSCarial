@@ -56,19 +56,14 @@ colnames(test_4k) <- colData(test_4k)[['Barcode']]
 
 Then we process the `test_4k` to annotate and visualize the cell types.
 
-We annotate cells with `CHETAH`.
+We annotate cells with `CHETAH`, and process data.
 
 
 ```r
 input <- CHETAHclassifier(input = test_4k, ref_cells = train_3k)
 input <- Classify(input = input, 0.00001)
 colData(test_4k)$celltypes <- input$celltype_CHETAH
-```
 
-Process data.
-
-
-```r
 test_4k <- logNormCounts(test_4k)
 dec <- modelGeneVar(test_4k)
 hvg <- getTopHVGs(dec, prop=0.1)
@@ -131,28 +126,21 @@ If you have enough available memory we recommand to use the `argForModif="data.f
 
 
 ```r
-adv_max_change <- advMaxChange(test_4k, colData(test_4k)$celltypes, "CD14+ Mono", CHETAHClassifier, advMethod="perc99", maxSplitSize = 2000,
-	argForClassif="SingleCellExperiment", argForModif="data.frame")
+adv_max_change <- advMaxChange(test_4k, colData(test_4k)$celltypes, "CD14+ Mono", CHETAHClassifier, advMethod="perc99",    maxSplitSize = 2000, argForClassif="SingleCellExperiment", argForModif="data.frame")
 ```
 
 
 Let's run this attack and verify if it is successful.
 
 First we modify the `test_4k` SingleCellExperiment object on the target cluster, on the genes previously determined.
-
+Then we verify that classification is still `CD14+ Mono`.
 
 ```r
 test_4k_adver <- advModifications(test_4k, adv_max_change@values, colData(test_4k)$celltypes, "CD14+ Mono",
 	argForClassif="SingleCellExperiment", argForModif="data.frame")
-```
 
-Then we verify that classification is still `CD14+ Mono`.
-
-```r
 rf_result <- CHETAHClassifier(test_4k_adver, colData(test_4k)$celltypes, "CD14+ Mono")
-```
 
-```r
 rf_result
 ```
 

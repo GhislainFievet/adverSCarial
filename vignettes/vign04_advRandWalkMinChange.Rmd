@@ -52,18 +52,13 @@ colnames(train_3k) <- colData(train_3k)[['Barcode']]
 colnames(test_4k) <- colData(test_4k)[['Barcode']]
 ```
 
-Annotation of the *test_4k* dataset with CHETAH.
+Annotation of the *test_4k* dataset with CHETAH, and processing of the SingleCellExperiment object.
 
 ```r
 input <- CHETAHclassifier(input = test_4k, ref_cells = train_3k)
 input <- Classify(input = input, 0.00001)
 colData(test_4k)$celltypes <- input$celltype_CHETAH
-```
 
-Processing of the SingleCellExperiment object.
-
-
-```r
 test_4k <- logNormCounts(test_4k)
 dec <- modelGeneVar(test_4k)
 hvg <- getTopHVGs(dec, prop=0.1)
@@ -106,9 +101,7 @@ genes_4walk <- rownames(fm_t4k[['DC']][abs(fm_t4k[['DC']]$summary.logFC)>1,])
 
 # Remove the officiel markers from the candidates
 genes_4walk <- genes_4walk[!genes_4walk %in% markers]
-```
 
-```r
 genes_4walk
 ```
 
@@ -132,9 +125,7 @@ Then we process to a random walk parameter search on these genes and these modif
 rand_walk_min_change <- advRandWalkMinChange(test_4k, colData(test_4k)$celltypes, "DC", CHETAHClassifier,
                                              genes=genes_4walk, modifications=modifications,
                                              walkLength=15, argForClassif = 'SingleCellExperiment')
-```
 
-```r
 head(rand_walk_min_change)
 ```
 

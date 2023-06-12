@@ -79,6 +79,9 @@ the first misclassification is found}
 classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
 or 'data.frame'.}
 
+\item{argForModif}{type of matrix during for the modification, 'DelayedMatrix'
+by default. Can be 'data.frame', which is faster, but need more memory.}
+
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
 \value{
