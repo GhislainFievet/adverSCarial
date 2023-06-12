@@ -19,27 +19,13 @@ matrixFromSCE <- function(sce) {
     if ( !is(sce,'SingleCellExperiment')){
         stop("The argument sce must be a SingleCellExperiment.")
     }
-    ind2keep <- .getUniqueIndex(
-        #sce@rowRanges@elementMetadata@listData$Symbol_TENx
-        sce@rowRanges@elementMetadata@listData$Symbol
-    )
+    # symbols <- sce@rowRanges@elementMetadata@listData$Symbol_TENx
+    symbols <- sce@rowRanges@elementMetadata@listData$Symbol
+    ind2keep <- setdiff(match(unique(symbols), symbols), which(is.na(symbols)))
+
     df <- data.frame(sce@assays@data$counts)
     df <- df[ind2keep, ]
     rownames(df) <- sce@ rowRanges@ elementMetadata@listData$Symbol[ind2keep]
     colnames(df) <- colData(sce)$Barcode
     t(df)
-}
-
-.getUniqueIndex <- function(cArray) {
-    cPrev <- c()
-    cResult <- c()
-    for (i in seq_along(cArray)) {
-        if (!is.na(cArray[i])) {
-            if (!cArray[i] %in% cPrev) {
-                cResult <- c(cResult, i)
-                cPrev <- c(cPrev, cArray[i])
-            }
-        }
-    }
-    cResult
 }

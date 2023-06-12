@@ -2,7 +2,7 @@
 % Please edit documentation in R/advModifications.R
 \name{advModifications}
 \alias{advModifications}
-\title{Returns a modified RNA expression matrix, or a modified SingleCellExperiment,
+\title{Returns a modified RNA expression DelayedMatrix, or a modified SingleCellExperiment,
 for a given cluster, for a given modification.}
 \usage{
 advModifications(
@@ -13,13 +13,17 @@ advModifications(
   advMethod = "perc99",
   advFixedValue = 3,
   advFct = NULL,
-  argForClassif = "data.frame",
+  argForClassif = "DelayedMatrix",
+  argForModif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
+\item{exprs}{DelayedMatrix of numeric RNA expression, cells are rows and genes
+are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
+these are converted to a data.frame to increase speed performance during modifications.
+However, this conversion can consume a significant amount of memory, see 'argForModif'
+argument for options.}
 
 \item{genes}{the character vector of genes to modify}
 
@@ -37,7 +41,11 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+or 'data.frame'.}
+
+\item{argForModif}{type of matrix during for the modification, 'DelayedMatrix'
+by default. Can be 'data.frame', which is faster, but need more memory.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
@@ -46,12 +54,12 @@ the matrix or a data.frame exprs modified on asked genes
 with the specified modification
 }
 \description{
-Returns a modified RNA expression matrix, or a modified SingleCellExperiment,
+Returns a modified RNA expression DelayedMatrix, or a modified SingleCellExperiment,
 for a given cluster, for a given modification.
 }
 \details{
 The motivation for this function is to standardize the modifications
-we want to study in the attacks. We give as argument a matrix of the RNA
+we want to study in the attacks. We give as argument a DelayedMatrix of the RNA
 expression, the gene and the target cells we want to modify. Then we have
 three arguments allowing to specify what modification we want to apply on
 these cells. The advMethod contains, a specific prerecorded modification
@@ -82,8 +90,8 @@ all genes values as input.
 }
 }
 \examples{
-rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-     CD8B=c(2,2,3,3))
+rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 

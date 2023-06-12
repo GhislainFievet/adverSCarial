@@ -17,13 +17,17 @@ advMaxChange(
   advFixedValue = 3,
   advFct = NULL,
   maxSplitSize = 1,
-  argForClassif = "data.frame",
+  argForClassif = "DelayedMatrix",
+  argForModif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
+\item{exprs}{DelayedMatrix of numeric RNA expression, cells are rows and genes
+are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
+these are converted to a data.frame to increase speed performance during modifications.
+However, this conversion can consume a significant amount of memory, see 'argForModif'
+argument for options.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
@@ -59,7 +63,11 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \item{maxSplitSize}{max size of dichotomic slices.}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+or 'data.frame'.}
+
+\item{argForModif}{type of matrix during for the modification, 'DelayedMatrix'
+by default. Can be 'data.frame', which is faster, but need more memory.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
@@ -81,7 +89,7 @@ to define a modification.
 The search is made by a dichotomic process, on a reccursive function.
 At each iteration the function splits the genes in two groups. It
 proceeds to the modification of the RNA gene value of the first group,
-makes its classification. Then three possible scenarios.
+makes its classification. Then three possible scenarios:
 \itemize{
 \item the classification is the same as the target cluster. We concat
 the genes list to the previous one, make the classification, and it still
@@ -105,8 +113,8 @@ to increase speed, and still returns significant results.
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }
-rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-     CD8B=c(2,2,3,3))
+rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 

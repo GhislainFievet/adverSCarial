@@ -1,7 +1,7 @@
 Package: adverSCarial
 Title: adverSCarial, generate and analyze the vulnerability of scRNA-seq
     classifiers to adversarial attacks
-Version: 0.99.38
+Version: 0.99.39
 Authors@R: c(
     person("Ghislain", "FIEVET", , "ghislain.fievet@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0337-7327")),
@@ -22,5 +22,5 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 biocViews: Software, SingleCell, Transcriptomics, Classification
 Suggests: knitr, RUnit, BiocGenerics, TENxPBMCData, CHETAH, stringr, LoomExperiment
-Imports: gtools, S4Vectors, methods
+Imports: gtools, S4Vectors, methods, DelayedArray
 VignetteBuilder: knitr

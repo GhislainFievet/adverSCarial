@@ -3,7 +3,7 @@
 \name{predictWithNewValue}
 \alias{predictWithNewValue}
 \title{Returns a classification and an odd value from a
-RNA expression matrix or a SingleCellExperiment object,
+RNA expression DelayedMatrix or a SingleCellExperiment object,
 for given genes, for a given cluster, for a given modification.}
 \usage{
 predictWithNewValue(
@@ -15,13 +15,14 @@ predictWithNewValue(
   advMethod = "perc99",
   advFixedValue = 3,
   advFct = NULL,
-  argForClassif = "data.frame",
+  argForClassif = "DelayedMatrix",
+  argForModif = "DelayedMatrix",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
+\item{exprs}{DelayedMatrix of numeric RNA expression, cells are rows and genes
+are columns - or a SingleCellExperiment object, a matrix or a data.frame.}
 
 \item{genes}{the character vector of genes to modify}
 
@@ -52,7 +53,11 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+or 'data.frame'.}
+
+\item{argForModif}{type of matrix during for the modification, 'DelayedMatrix'
+by default. Can be 'data.frame', which is faster, but need more memory.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
@@ -61,7 +66,7 @@ a vector of the classification, and the associated odd
 }
 \description{
 Returns a classification and an odd value from a
-RNA expression matrix or a SingleCellExperiment object,
+RNA expression DelayedMatrix or a SingleCellExperiment object,
 for given genes, for a given cluster, for a given modification.
 }
 \details{
@@ -69,16 +74,16 @@ This function aims to concatenate the following actions:
 \itemize{
 \item modify the RNA gene expression
 \item classify the result
-This is a function widely used in the other functions of the package.
+This is a widely used function in the other functions of the package.
 }
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }
-rna_expression <- data.frame(CD4=c(0,0,0,0),
+rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0),
      CD8A=c(1,1,1,1),
-     CD8B=c(2,2,3,3))
+     CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 

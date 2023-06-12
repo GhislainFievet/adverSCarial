@@ -4,11 +4,11 @@
 \alias{MClassifier}
 \title{Example cell type classifier for pbmc clustered datasets.}
 \usage{
-MClassifier(expr, clusters, target)
+MClassifier(exprs, clusters, target)
 }
 \arguments{
-\item{expr}{a matrix or a data.frame of numeric
-RNA expression, cells are rows and genes are columns.}
+\item{exprs}{DelayedMatrix of numeric RNA expression, cells are rows and genes
+are columns - or a SingleCellExperiment object, a matrix or a data.frame.}
 
 \item{clusters}{vector of clusters to which each cell belongs}
 

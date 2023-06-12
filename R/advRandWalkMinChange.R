@@ -32,8 +32,10 @@
 #' Step 2 is to perform a random walk search to reduce the number of genes
 #' needed to change the classification.
 #' The 
-#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
+#' @param exprs DelayedMatrix of numeric RNA expression, cells are rows and genes
+#' are columns - or a SingleCellExperiment object, a matrix or a data.frame. By
+#' default matrix and data.frame are converted to DelayedMatrix for memory
+#' performance, see 'argForModif' argument for options.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
 #' @param classifier a classifier in the suitable format.
@@ -58,15 +60,18 @@
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+#' or 'data.frame'.
+#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
+#' by default. Can be 'data.frame', which is faster, but need more memory.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return DataFrame results of the classification of all the grid combinations
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }
-#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-#'      CD8B=c(2,2,3,3))
+#' rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3)))
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #'
@@ -93,10 +98,12 @@
 advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         modifications = list(c("perc1"), c("perc99")), firstBatch = 100,
         walkLength = 100, stepChangeRatio = 0.2, whileMaxCount = 10000,
-        changeType = "any", argForClassif = 'data.frame',
+        changeType = "any", argForClassif = 'DelayedMatrix',
+        argForModif = 'DelayedMatrix',
         verbose = FALSE) {
-    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
-        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
+    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
+        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){
+        stop("The argument exprs must be a DelayedMatrix, a SingleCellExperiment, a matrix or a data.frame")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -135,11 +142,19 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         stop("The argument verbose must be logical.")
     }
     if (is(exprs,'SingleCellExperiment') ){
-        exprs <- as.matrix(t(counts(exprs)))
+        exprs <- t(counts(exprs))
+    }
+    if (!is(exprs,'DelayedMatrix') && argForModif=="DelayedMatrix"){
+        message("Converting exprs object to a DelayedArray object")
+        exprs <- DelayedArray::DelayedArray(exprs)
+    }
+    if (!is(exprs,'data.frame') && argForModif=="data.frame"){
+        message("Converting exprs object to a data.frame object")
+        exprs <- as.data.frame(exprs)
     }
 
     beforeWalk <- .randWalkBeforeWalk(exprs, genes, modifications,
-        clusters, target, classifier, firstBatch, argForClassif, verbose)
+        clusters, target, classifier, firstBatch, argForClassif, argForModif, verbose)
     previousStrComb <- beforeWalk[[1]]
     functionResults <- beforeWalk[[2]]
     bestAttackParams <- beforeWalk[[3]]
@@ -148,8 +163,8 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         return(functionResults)
     }
     for (i in seq_len(walkLength)) {
-        message("Walk step ", i, " on ", walkLength)
-        if (verbose) {
+        if (verbose || log2(i) == round(log2(i)) || i == walkLength){
+            message("Walk step ", i, " on ", walkLength)
             message("Current best attack length: ",
                 length(bestAttackParams), " genes")
         }
@@ -166,7 +181,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         lrwtnv <- .randWalkTryNewVector(exprs, genes,
             newWalkParams, modifications, clusters, target,
             classifier, bestAttackParams, i, functionResults,
-            changeType, argForClassif, verbose)
+            changeType, argForClassif, argForModif, verbose)
         functionResults <- lrwtnv[['functionResults']]
         bestAttackParams <- lrwtnv[['bestAttackParams']]
     }
@@ -177,7 +192,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
 
 .randWalkTryNewVector <- function(exprs, genes, newWalkParams, modifications,
         clusters, target, classifier, bestAttackParams, i,
-        functionResults, changeType, argForClassif, verbose){
+        functionResults, changeType, argForClassif, argForModif, verbose){
     exprsTemp <- exprs
     rowResults <- c()
     rowResultsInt <- c()
@@ -189,12 +204,12 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
             if (length(modifications[[modifInd]]) == 1) {
                 exprsTemp <- advModifications(exprsTemp,
                     genes[geneInd], clusters, target,
-                    advMethod = mod1, verbose = verbose)
+                    advMethod = mod1, argForModif=argForModif, verbose = verbose)
             } else {
                 mod2 <- modifications[[modifInd]][[2]]
                 exprsTemp <- advModifications(exprsTemp, genes[geneInd],
                     clusters, target, advMethod = mod1,
-                    advFixedValue = mod2, advFct = mod2,
+                    advFixedValue = mod2, advFct = mod2, argForModif=argForModif,
                     verbose = verbose)
             }
             rowResults <- c(rowResults, paste(modifications[[modifInd]],
@@ -210,6 +225,12 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     if ( argForClassif == 'SingleCellExperiment'){
         exprsTemp <- SingleCellExperiment(assays = list(counts = t(exprsTemp)))
     }
+    if (!is(exprsTemp, 'data.frame') && argForClassif=='data.frame'){
+        exprsTemp <- as.data.frame(exprsTemp)
+    }
+    if (!is(exprsTemp,'DelayedMatrix') && argForClassif=="DelayedMatrix"){
+        exprsTemp <- DelayedArray::DelayedArray(exprsTemp)
+    }
     classResults <- classifier(exprsTemp, clusters, target)
     typeModified <- classResults[1] != target
     if ( changeType == "not_na")
@@ -219,8 +240,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         tempBestAttackParams <- as.data.frame(t(rowResultsInt))
         colnames(tempBestAttackParams) <- colnames(bestAttackParams)
         bestAttackParams <- tempBestAttackParams
-        message( "Better attack with only ", genesModified,
-            " genes modified")
+        message( "Better attack with only ", genesModified, " genes modified")
     }
     rowResults <- c(classResults[1], classResults[2],
         genesModified, typeModified, (i + 1), rowResults)
@@ -276,7 +296,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
 }
 
 .randWalkBeforeWalk <- function(exprs, genes, modifications,
-            clusters, target, classifier, firstBatch, argForClassif, verbose){
+            clusters, target, classifier, firstBatch, argForClassif, argForModif, verbose){
     initObjs <- .initRandWalk(modifications, genes, firstBatch)
     previousStrComb <- initObjs[[1]]
     testsGrid <- initObjs[[2]]
@@ -286,7 +306,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
     resultsInt <- initObjs[[6]]
     rwSeed <- .randWalkGetSeed(testsGrid, exprs, genes, modifications,
         clusters, target, classifier, results, resultsInt,
-        previousStrComb, argForClassif, verbose)
+        previousStrComb, argForClassif, argForModif, verbose)
     results <- rwSeed[[1]]
     resultsInt <- rwSeed[[2]]
     previousStrComb <- rwSeed[[3]]
@@ -312,12 +332,13 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
 }
 
 .randWalkGetSeed <- function(testsGrid, exprs, genes, modifications, clusters,
-    target, classifier, results, resultsInt, previousStrComb, argForClassif, verbose){
+    target, classifier, results, resultsInt, previousStrComb, argForClassif, argForModif, verbose){
     i<- 1
     newPreviousStrComb <- c()
     while (i <= nrow(testsGrid)) {
-        message("Running first batch to determine walk seed: ",
-            i, " on ", nrow(testsGrid))
+        if (verbose || log2(i) == round(log2(i)) || i == nrow(testsGrid)){
+            message("Running first batch to determine walk seed: ", i, " on ", nrow(testsGrid))
+        }
         exprsTemp <- exprs
         newPreviousStrComb <- c(newPreviousStrComb, previousStrComb[i])
         rowResults <- c()
@@ -347,6 +368,12 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         }
         if ( argForClassif == 'SingleCellExperiment'){
             exprsTemp <- SingleCellExperiment(assays = list(counts = t(exprsTemp)))
+        }
+        if (!is(exprsTemp, 'data.frame') && argForClassif=='data.frame'){
+            exprsTemp <- as.data.frame(exprsTemp)
+        }
+        if (!is(exprsTemp,'DelayedMatrix') && argForClassif=="DelayedMatrix"){
+            exprsTemp <- DelayedArray::DelayedArray(exprsTemp)
         }
         classResults <- classifier(exprsTemp, clusters, target)
         rowResults <- c(rowResults, classResults[1], classResults[2])

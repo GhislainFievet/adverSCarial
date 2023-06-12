@@ -1,13 +1,13 @@
 #' Returns a classification and an odd value from a
-#' RNA expression matrix or a SingleCellExperiment object,
+#' RNA expression DelayedMatrix or a SingleCellExperiment object,
 #' for given genes, for a given cluster, for a given modification.
 #'
 #' @details This function aims to concatenate the following actions:
 #' - modify the RNA gene expression
 #' - classify the result
-#' This is a function widely used in the other functions of the package.
-#' @param exprs can be a matrix or a data.frame of numeric RNA expression,
-#' cells are rows and genes are columns. Or can be a SingleCellExperiment object.
+#' This is a widely used function in the other functions of the package.
+#' @param exprs DelayedMatrix of numeric RNA expression, cells are rows and genes
+#' are columns - or a SingleCellExperiment object, a matrix or a data.frame.
 #' @param genes the character vector of genes to modify
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
@@ -30,16 +30,19 @@
 #' belongs to the following list: `full_row_fct`, `target_row_fct`,
 #' `target_matrix_fct`, `full_matrix_fct`
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+#' or 'data.frame'.
+#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
+#' by default. Can be 'data.frame', which is faster, but need more memory.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a vector of the classification, and the associated odd
 #' @examples
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }
-#' rna_expression <- data.frame(CD4=c(0,0,0,0),
+#' rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0),
 #'      CD8A=c(1,1,1,1),
-#'      CD8B=c(2,2,3,3))
+#'      CD8B=c(2,2,3,3)))
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #'
@@ -50,10 +53,12 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
                                 classifier, advMethod = "perc99",
                                 advFixedValue = 3,
                                 advFct = NULL,
-                                argForClassif = 'data.frame',
+                                argForClassif = 'DelayedMatrix',
+                                argForModif = 'DelayedMatrix',
                                 verbose = FALSE) {
-    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') && !is(exprs,'SingleCellExperiment')){
-        stop("The argument exprs must be a matrix, a data.frame or a SingleCellExperiment")
+    if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
+        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){
+        stop("The argument exprs must be a DelayedMatrix, a SingleCellExperiment, a matrix or a data.frame")
     }
     if (!is.character(genes)) {
         stop("The argument genes must be character or vector of character.")
@@ -78,8 +83,7 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
     }
 
     if (verbose) {
-        message("Modify data for ", length(genes),
-            " genes for cluster ", target)
+        message("Modify data for ", length(genes), " genes for cluster ", target)
     }
 
     modifExprs <- advModifications(exprs,
@@ -89,7 +93,8 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
         advMethod = advMethod,
         advFixedValue = advFixedValue,
         advFct = advFct,
-        argForClassif = argForClassif
+        argForClassif = argForClassif,
+        argForModif = argForModif
     )
 
     classifier(modifExprs, clusters, target)

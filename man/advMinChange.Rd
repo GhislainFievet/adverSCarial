@@ -21,13 +21,17 @@ advMinChange(
   maxSplitSize = 1,
   returnFirstFound = FALSE,
   changeType = "any",
-  argForClassif = "data.frame",
+  argForClassif = "DelayedMatrix",
+  argForModif = "data.frame",
   verbose = FALSE
 )
 }
 \arguments{
-\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
+\item{exprs}{DelayedMatrix of numeric RNA expression, cells are rows and genes
+are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
+these are converted to a data.frame to increase speed performance during modifications.
+However, this conversion can consume a significant amount of memory, see 'argForModif'
+argument for options.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
@@ -72,7 +76,8 @@ the first misclassification is found}
 \code{not_na} consider each misclassification but NA.}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+or 'data.frame'.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }
@@ -114,8 +119,8 @@ the genes list is split in two, and the dichotomic process continues.
 MyClassifier <- function(expr, clusters, target) {
    c("B cell", 0.9)
 }
-rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-     CD8B=c(2,2,3,3))
+rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 

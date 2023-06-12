@@ -25,7 +25,7 @@ function to shorten the list as much as possible.
 # Load data
   
 
-```{r load various libraries 2, message=FALSE}
+```r
 library(adverSCarial)
 library(TENxPBMCData)
 library(CHETAH)
@@ -34,8 +34,10 @@ library(scran)
 library(stringr)
 ```
 
+We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.
+
+
 ```r
-# We get two pbmc datasets, *train_3k* to train the CHETAH classifier, and *test_4k* to run the adverSCarial functions.
 train_3k <- TENxPBMCData(dataset = "pbmc3k")
 test_4k <- TENxPBMCData(dataset = "pbmc4k")
 
@@ -46,8 +48,8 @@ train_3k <- sceConvertToHGNC(train_3k)
 cell_types_3k <- system.file("extdata", "pbmc3k_cell_types.tsv", package="adverSCarial")
 cell_types_3k <- read.table(cell_types_3k, sep="\t")
 colData(train_3k)$celltypes <- cell_types_3k$cell_type
-colnames(train_3k) = colData(train_3k)[['Barcode']]
-colnames(test_4k) = colData(test_4k)[['Barcode']]
+colnames(train_3k) <- colData(train_3k)[['Barcode']]
+colnames(test_4k) <- colData(test_4k)[['Barcode']]
 ```
 
 Annotation of the *test_4k* dataset with CHETAH.
@@ -94,18 +96,19 @@ We use the `advRandWalkMinChange` function to generate a complex attack, looking
 First step is to look for a list of genes suscpetibles to move the classification. We get this list by using the `findMarkers` function from `scran`.
 
 
-```{r markers v03}
-markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
-              "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
-```
-
 ```r
+markers <- c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
+              "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
+
 test_4k_subset <- test_4k[, test_4k$celltypes %in% c("CD14+ Mono", "DC")]
 fm_t4k <- findMarkers(test_4k_subset, test_4k_subset$celltypes)
 genes_4walk <- rownames(fm_t4k[['DC']][abs(fm_t4k[['DC']]$summary.logFC)>1,])
 
 # Remove the officiel markers from the candidates
 genes_4walk <- genes_4walk[!genes_4walk %in% markers]
+```
+
+```r
 genes_4walk
 ```
 
@@ -139,36 +142,36 @@ head(rand_walk_min_change)
 ## DataFrame with 6 rows and 22 columns
 ##     prediction         odd genesModified typeModified   iteration     HLA.DRA
 ##    <character> <character>   <character>  <character> <character> <character>
-## 1   CD14+ Mono    0.421875             2         TRUE          16          NA
-## 2   CD14+ Mono    0.421875             3         TRUE          15          NA
-## 3 UNDETERMINED         0.5             4         TRUE          14          NA
-## 4 UNDETERMINED         0.5             5         TRUE          12          NA
-## 5 UNDETERMINED     0.53125             6         TRUE          11          NA
-## 6 UNDETERMINED       0.625             7         TRUE           9          NA
+## 1 UNDETERMINED    0.484375             2         TRUE          15          NA
+## 2   CD14+ Mono    0.578125             3         TRUE          14          NA
+## 3 UNDETERMINED         0.5             4         TRUE          13          NA
+## 4 UNDETERMINED         0.5             5         TRUE          11      perc99
+## 5   CD14+ Mono         0.5             7         TRUE          10      perc99
+## 6 UNDETERMINED     0.59375             8         TRUE           9      perc99
 ##       S100A12    HLA.DQB1    HLA.DPA1    HLA.DPB1    HLA.DRB1      S100A8
 ##   <character> <character> <character> <character> <character> <character>
-## 1          NA          NA          NA       perc1          NA          NA
-## 2          NA          NA          NA       perc1          NA          NA
-## 3          NA          NA          NA       perc1          NA          NA
-## 4          NA          NA          NA       perc1          NA          NA
-## 5          NA      perc99          NA       perc1          NA          NA
-## 6       perc1      perc99          NA       perc1          NA          NA
+## 1          NA       perc1       perc1          NA          NA          NA
+## 2          NA       perc1       perc1          NA          NA      perc99
+## 3          NA       perc1       perc1          NA          NA       perc1
+## 4          NA       perc1       perc1          NA          NA       perc1
+## 5          NA       perc1       perc1          NA          NA       perc1
+## 6          NA       perc1       perc1          NA       perc1       perc1
 ##      HLA.DQA1      S100A9        CD74        VCAN     HLA.DMA        CTSS
 ##   <character> <character> <character> <character> <character> <character>
-## 1          NA      perc99          NA          NA          NA          NA
-## 2          NA      perc99          NA       perc1          NA          NA
-## 3          NA       perc1          NA       perc1          NA          NA
-## 4          NA       perc1          NA       perc1      perc99          NA
-## 5          NA       perc1          NA      perc99      perc99          NA
-## 6          NA       perc1          NA       perc1          NA          NA
+## 1          NA          NA          NA          NA          NA          NA
+## 2          NA          NA          NA          NA          NA          NA
+## 3          NA          NA          NA          NA       perc1          NA
+## 4          NA          NA          NA          NA       perc1          NA
+## 5          NA          NA       perc1       perc1       perc1          NA
+## 6          NA          NA       perc1       perc1       perc1          NA
 ##           FTL        FCN1      TYROBP       NEAT1
 ##   <character> <character> <character> <character>
 ## 1          NA          NA          NA          NA
 ## 2          NA          NA          NA          NA
-## 3          NA          NA          NA       perc1
-## 4          NA          NA          NA       perc1
-## 5          NA          NA          NA       perc1
-## 6          NA          NA       perc1       perc1
+## 3          NA          NA          NA          NA
+## 4          NA          NA          NA          NA
+## 5          NA          NA          NA          NA
+## 6          NA          NA          NA          NA
 ```
 The first line of `rand_walk_min_change` contains the parameter for the attack:
 
@@ -180,8 +183,8 @@ best_results
 ```
 
 ```
-##   HLA.DPB1 S100A9
-## 1    perc1 perc99
+##   HLA.DQB1 HLA.DPA1
+## 1    perc1    perc1
 ```
 
 Then we modify the rna expression matrix to fool the classifier:
@@ -209,7 +212,7 @@ res_classif
 ```
 
 ```
-## [1] "CD14+ Mono" "0.421875"
+## [1] "UNDETERMINED" "0.484375"
 ```
 
 
@@ -246,46 +249,46 @@ sessionInfo()
 ##  [3] scater_1.28.0               scuttle_1.10.1             
 ##  [5] CHETAH_1.16.0               ggplot2_3.4.2              
 ##  [7] TENxPBMCData_1.18.0         HDF5Array_1.28.1           
-##  [9] rhdf5_2.44.0                DelayedArray_0.26.2        
+##  [9] rhdf5_2.44.0                DelayedArray_0.26.3        
 ## [11] S4Arrays_1.0.4              Matrix_1.5-4.1             
 ## [13] SingleCellExperiment_1.22.0 SummarizedExperiment_1.30.1
 ## [15] Biobase_2.60.0              GenomicRanges_1.52.0       
 ## [17] GenomeInfoDb_1.36.0         IRanges_2.34.0             
 ## [19] S4Vectors_0.38.1            BiocGenerics_0.46.0        
 ## [21] MatrixGenerics_1.12.0       matrixStats_0.63.0         
-## [23] adverSCarial_0.99.20       
+## [23] adverSCarial_0.99.38        knitr_1.42                 
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] RColorBrewer_1.1-3            jsonlite_1.8.4               
 ##   [3] magrittr_2.0.3                ggbeeswarm_0.7.2             
-##   [5] farver_2.1.1                  corrplot_0.92                
-##   [7] zlibbioc_1.46.0               vctrs_0.6.2                  
-##   [9] memoise_2.0.1                 DelayedMatrixStats_1.22.0    
-##  [11] RCurl_1.98-1.12               htmltools_0.5.5              
+##   [5] corrplot_0.92                 zlibbioc_1.46.0              
+##   [7] vctrs_0.6.2                   memoise_2.0.1                
+##   [9] DelayedMatrixStats_1.22.0     RCurl_1.98-1.12              
+##  [11] base64enc_0.1-3               htmltools_0.5.5              
 ##  [13] AnnotationHub_3.8.0           curl_5.0.0                   
 ##  [15] BiocNeighbors_1.18.0          Rhdf5lib_1.22.0              
 ##  [17] htmlwidgets_1.6.2             plyr_1.8.8                   
 ##  [19] plotly_4.10.1                 cachem_1.0.8                 
-##  [21] igraph_1.4.2                  mime_0.12                    
-##  [23] lifecycle_1.0.3               pkgconfig_2.0.3              
-##  [25] rsvd_1.0.5                    R6_2.5.1                     
-##  [27] fastmap_1.1.1                 GenomeInfoDbData_1.2.10      
-##  [29] shiny_1.7.4                   digest_0.6.31                
-##  [31] colorspace_2.1-0              AnnotationDbi_1.62.1         
-##  [33] dqrng_0.3.0                   irlba_2.3.5.1                
-##  [35] ExperimentHub_2.8.0           RSQLite_2.3.1                
-##  [37] beachmat_2.16.0               labeling_0.4.2               
+##  [21] uuid_1.1-0                    igraph_1.4.2                 
+##  [23] mime_0.12                     lifecycle_1.0.3              
+##  [25] pkgconfig_2.0.3               rsvd_1.0.5                   
+##  [27] R6_2.5.1                      fastmap_1.1.1                
+##  [29] GenomeInfoDbData_1.2.10       shiny_1.7.4                  
+##  [31] digest_0.6.31                 colorspace_2.1-0             
+##  [33] AnnotationDbi_1.62.1          dqrng_0.3.0                  
+##  [35] irlba_2.3.5.1                 ExperimentHub_2.8.0          
+##  [37] RSQLite_2.3.1                 beachmat_2.16.0              
 ##  [39] filelock_1.0.2                fansi_1.0.4                  
 ##  [41] httr_1.4.6                    compiler_4.3.0               
 ##  [43] bit64_4.0.5                   withr_2.5.0                  
 ##  [45] BiocParallel_1.34.1           viridis_0.6.3                
-##  [47] DBI_1.1.3                     highr_0.10                   
-##  [49] dendextend_1.17.1             rappdirs_0.3.3               
-##  [51] bluster_1.10.0                tools_4.3.0                  
-##  [53] vipor_0.4.5                   beeswarm_0.4.0               
-##  [55] interactiveDisplayBase_1.38.0 httpuv_1.6.11                
-##  [57] glue_1.6.2                    rhdf5filters_1.12.1          
-##  [59] promises_1.2.0.1              grid_4.3.0                   
+##  [47] DBI_1.1.3                     dendextend_1.17.1            
+##  [49] rappdirs_0.3.3                bluster_1.10.0               
+##  [51] tools_4.3.0                   vipor_0.4.5                  
+##  [53] beeswarm_0.4.0                interactiveDisplayBase_1.38.0
+##  [55] httpuv_1.6.11                 glue_1.6.2                   
+##  [57] rhdf5filters_1.12.1           promises_1.2.0.1             
+##  [59] grid_4.3.0                    pbdZMQ_0.3-9                 
 ##  [61] cluster_2.1.4                 reshape2_1.4.4               
 ##  [63] generics_0.1.3                gtable_0.3.3                 
 ##  [65] tidyr_1.3.0                   data.table_1.14.8            
@@ -294,25 +297,26 @@ sessionInfo()
 ##  [71] XVector_0.40.0                RcppAnnoy_0.0.20             
 ##  [73] ggrepel_0.9.3                 BiocVersion_3.17.1           
 ##  [75] pillar_1.9.0                  limma_3.56.1                 
-##  [77] later_1.3.1                   dplyr_1.1.2                  
-##  [79] BiocFileCache_2.8.0           lattice_0.21-8               
-##  [81] bit_4.0.5                     tidyselect_1.2.0             
-##  [83] locfit_1.5-9.7                Biostrings_2.68.1            
-##  [85] knitr_1.42                    gridExtra_2.3                
+##  [77] IRdisplay_1.1                 later_1.3.1                  
+##  [79] dplyr_1.1.2                   BiocFileCache_2.8.0          
+##  [81] lattice_0.21-8                bit_4.0.5                    
+##  [83] tidyselect_1.2.0              locfit_1.5-9.7               
+##  [85] Biostrings_2.68.1             gridExtra_2.3                
 ##  [87] edgeR_3.42.2                  xfun_0.39                    
 ##  [89] statmod_1.5.0                 pheatmap_1.0.12              
 ##  [91] stringi_1.7.12                lazyeval_0.2.2               
 ##  [93] yaml_2.3.7                    evaluate_0.21                
 ##  [95] codetools_0.2-19              tibble_3.2.1                 
 ##  [97] BiocManager_1.30.20           cli_3.6.1                    
-##  [99] uwot_0.1.14                   xtable_1.8-4                 
-## [101] munsell_0.5.0                 Rcpp_1.0.10                  
-## [103] bioDist_1.72.0                dbplyr_2.3.2                 
-## [105] png_0.1-8                     parallel_4.3.0               
-## [107] ellipsis_0.3.2                blob_1.2.4                   
-## [109] sparseMatrixStats_1.12.0      bitops_1.0-7                 
-## [111] viridisLite_0.4.2             scales_1.2.1                 
-## [113] purrr_1.0.1                   crayon_1.5.2                 
-## [115] rlang_1.1.1                   cowplot_1.1.1                
-## [117] KEGGREST_1.40.0
+##  [99] uwot_0.1.14                   IRkernel_1.3.2               
+## [101] xtable_1.8-4                  repr_1.1.6                   
+## [103] munsell_0.5.0                 Rcpp_1.0.10                  
+## [105] bioDist_1.72.0                dbplyr_2.3.2                 
+## [107] png_0.1-8                     parallel_4.3.0               
+## [109] ellipsis_0.3.2                blob_1.2.4                   
+## [111] sparseMatrixStats_1.12.0      bitops_1.0-7                 
+## [113] viridisLite_0.4.2             scales_1.2.1                 
+## [115] purrr_1.0.1                   crayon_1.5.2                 
+## [117] rlang_1.1.1                   cowplot_1.1.1                
+## [119] KEGGREST_1.40.0
 ```

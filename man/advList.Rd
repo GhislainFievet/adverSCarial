@@ -5,15 +5,15 @@
 \alias{advList-class}
 \alias{advList}
 \title{adverSCarial class}
+\value{
+A advList object
+}
 \description{
 \code{advList} is a class used to store the output values
 of the \code{advMinChange} function. The result can be a list
 of few thousands genes:cell_type key/values, so a specific \emph{show}
 method is associated to this class to avoid overflooding the R
 scripts outputs.
-}
-\value{
-A advList object
 }
 \examples{
 MyClassifier <- function(expr, clusters, target) {

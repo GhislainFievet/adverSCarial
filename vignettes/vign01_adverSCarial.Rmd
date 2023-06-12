@@ -67,7 +67,7 @@ lfile <- import(pbmcPath, type="SingleCellLoomExperiment")
 ```
 
 ```{r extract matrix data}
-matPbmc <- as.data.frame(counts(lfile))
+matPbmc <- counts(lfile)
 ```
 
 ```{r visualize1, message=FALSE, warning = FALSE}
@@ -75,7 +75,7 @@ matPbmc[1:5, 1:5]
 ```
 
 
-and its cell type classification.
+and its cell type classification based on [Seurat documentation](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html)
 ```{r load annnots, message=FALSE, warning = FALSE}
 cellTypes <- rowData(lfile)$cell_type
 ```
@@ -84,20 +84,21 @@ cellTypes <- rowData(lfile)$cell_type
 head(cellTypes)
 ```
 
-The package contains a marker based classifier working on the pbmc3k dataset: `MClassifier`. We verify it is classifying properly.
+The package contains a marker based classifier working on the pbmc3k dataset: `MClassifier`.
+We verify it is classifying properly according to the `cellTypes`.
 
 ```{r first classif, message=FALSE}
-resClassif <- MClassifier(matPbmc, cellTypes, "DC")
-```
-```{r first classif bis}
-resClassif
+for ( cell_type in unique(cellTypes)){
+    resClassif <- MClassifier(matPbmc, cellTypes, cell_type)
+    print(paste0("Expected: ", cell_type, ", predicted: ", resClassif[1]))
+}
 ```
 
 We want to run attacks on the "DC" cluster but without modifying the genes used by human to make manual classification. We can find this list on [Seurat documentation](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html)
 
 ```{r markers}
 # Known markers for each cell type
-markers = c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
+markers <- c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A", "MS4A7",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
 ```
 
@@ -114,7 +115,7 @@ Computation times can be lengthy, we use the `return_first_found` argument to re
 We can specify the `change_type = "not_na"` argument to indicate that we want the attack to misclassify the cluster as an existing cell type, rather than as NA.
 
 ```{r search min change attack, message=FALSE, warning = FALSE}
-genesMinChange = advMinChange(matPbmc, cellTypes, "DC",
+genesMinChange <- advMinChange(matPbmc, cellTypes, "DC",
                         MClassifier, exclGenes = markers, advMethod = "perc99",
                         returnFirstFound = TRUE, changeType = "not_na",
                         firstDichot = 10)
@@ -123,7 +124,7 @@ genesMinChange = advMinChange(matPbmc, cellTypes, "DC",
 genesMinChange
 ```
 
-The function found that modifying the single gene `names(genesMinChange@values)[1]` with the `perc99` modification on the cluster leads to a new classification, `genesMinChange@values[[1]][1]`.
+The function found that modifying the single gene `r names(genesMinChange@values)[1]` with the `perc99` modification on the cluster leads to a new classification, `r genesMinChange@values[[1]][1]`.
 
 Let's run this attack and verify if it is successful.
 
@@ -150,7 +151,7 @@ The function `advMaxChange` runs a dichotomic search of gene subsets, given the 
 The `maxSplitSize` argument is the maximum size of dichotomic slices. Set to 1 to have better results, but it will take longer to compute.
 
 ```{r search max change attack, warning = FALSE, message=FALSE}
-genesMaxChange <- advMaxChange(matPbmc, cellTypes, "DC", MClassifier,
+genesMaxChange <- advMaxChange(matPbmc, cellTypes, "Memory CD4 T", MClassifier,
                     exclGenes = markers, advMethod = "perc99")
 ```
 ```{r search max change attack bis, warning = FALSE}
@@ -158,19 +159,19 @@ length(genesMaxChange@values)
 ```
 
 
-The function found `length(genesMaxChange@values)` genes that you can modify with the `perc99` modification, and the cluster is still classified as `DC`.
+The function found `r length(genesMaxChange@values)` genes that you can modify with the `perc99` modification, and the cluster is still classified as `Memory CD4 T`.
 
 Let's run this attack and verify if it is successful.
 
 First we modify the `matPbmc` matrix on the target cluster, on the genes previously determined.
 
 ```{r run max change attack, message=FALSE, warning=FALSE}
-matMaxAdver <- advModifications(matPbmc, genesMaxChange@values, cellTypes, "DC")
+matMaxAdver <- advModifications(matPbmc, genesMaxChange@values, cellTypes, "Memory CD4 T")
 ```
 
-Then we verify that classification is still `DC`.
+Then we verify that classification is still `Memory CD4 T`.
 ```{r verify max change attack, warning = FALSE, message=FALSE}
-resClassif <- MClassifier(matMaxAdver, cellTypes, "DC")
+resClassif <- MClassifier(matMaxAdver, cellTypes, "Memory CD4 T")
 ```
 ```{r verify max change attack bis, warning = FALSE}
 resClassif

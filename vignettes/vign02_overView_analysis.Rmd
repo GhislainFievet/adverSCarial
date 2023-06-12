@@ -22,6 +22,7 @@ vignette: >
 ```{r load libraries, warning = FALSE, message=FALSE}
 library(adverSCarial)
 library(LoomExperiment)
+library(DelayedArray)
 ```
 
 ## Load loom file
@@ -31,7 +32,7 @@ lfile <- import(pbmcPath, type="SingleCellLoomExperiment")
 ```
 
 ```{r load table}
-matPbmc <- as.data.frame(counts(lfile))
+matPbmc <- counts(lfile)
 ```
 
 ```{r visualize1, message=FALSE, warning = FALSE}
@@ -64,6 +65,7 @@ Here we define the modifications to analyse, the predefined `perc1`, and a custo
 modifOutlier <- function(x){
     return (max(x)*1000)
 }
+```
 
 ```{r use the function, warning = FALSE}
 modifications <- list(c("perc1"), c("full_row_fct", modifOutlier))
@@ -71,15 +73,17 @@ modifications <- list(c("perc1"), c("full_row_fct", modifOutlier))
 
 We run the `min change overview`, this gives us a general idea of which cell types are more vulnerable to min change attacks.
 ```{r run min change overview, warning = FALSE, message=FALSE}
-min_change_overview <- minChangeOverview(matPbmc, cellTypes, MClassifier, modifications= modifications, maxSplitSize = 20, firstDichot = 5)
+min_change_overview <- minChangeOverview(matPbmc, cellTypes, MClassifier,
+    modifications= modifications, maxSplitSize = 20, firstDichot = 5)
 ```
 ```{r run min change overview bis, warning = FALSE}
 min_change_overview
 ```
 
 And the `max change overview`, giving us a general idea of which cell types are more vulnerable to max change attacks.
-```{r run max change overview, warning = FALSE, cache = TRUE, message=FALSE}
-max_change_overview <- maxChangeOverview(matPbmc, cellTypes, MClassifier, modifications= modifications, maxSplitSize = 20)
+```{r run max change overview, warning = FALSE, message=FALSE}
+max_change_overview <- maxChangeOverview(matPbmc, cellTypes, MClassifier,
+    modifications= modifications, maxSplitSize = 20)
 ```
 ```{r run max change overview bis, warning = FALSE}
 max_change_overview

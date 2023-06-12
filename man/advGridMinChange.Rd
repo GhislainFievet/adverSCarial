@@ -13,14 +13,17 @@ advGridMinChange(
   genes,
   modifications = list(c("perc1"), c("perc99")),
   returnFirstFound = FALSE,
-  argForClassif = "data.frame",
+  argForClassif = "DelayedMatrix",
+  argForModif = "DelayedMatrix",
   verbose = FALSE,
   iamsure = FALSE
 )
 }
 \arguments{
-\item{exprs}{can be a matrix or a data.frame of numeric RNA expression,
-cells are rows and genes are columns. Or can be a SingleCellExperiment object.}
+\item{exprs}{DelayedMatrix of numeric RNA expression, cells are rows and genes
+are columns - or a SingleCellExperiment object, a matrix or a data.frame. By
+default matrix and data.frame are converted to DelayedMatrix for memory
+performance, see 'argForModif' argument for options.}
 
 \item{clusters}{a character vector of the clusters to which the cells belong}
 
@@ -47,7 +50,11 @@ The function returns a vector with the classification result, and a score.}
 the first misclassification is found}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'data.frame' by default, can be 'SingleCellExperiment'}
+classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
+or 'data.frame'.}
+
+\item{argForModif}{type of matrix for the modification, 'DelayedMatrix'
+by default. Can be 'data.frame', which is faster, but need more memory.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 
@@ -68,10 +75,8 @@ for a given gene list. This function can take a long time to run, and we
 recommand to use the random walk search advRandWalkMinChange function instead
 for lists above 10 genes.
 
-You can specify a list of modifications as so - each item of the list should
-be 1 or 2 length size.
-The 1 length vector must contain the prerecorded modifications, 'perc1'
-or 'perc99'.
+You can specify a list of modifications as so, each item of the list should be 1 or 2 length size.
+The 1 length vector must contain the prerecorded modifications, 'perc1' or 'perc99'.
 The 2 length vector must have as first item:
 \itemize{
 \item 'fixed', in this case the second item should be the value to be
@@ -91,8 +96,8 @@ c("full_matrix_fct", myFct))
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }
-rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-     CD8B=c(2,2,3,3))
+rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
