@@ -53,11 +53,13 @@
 #' when `genes` list is too long, set to `TRUE` to run anyway.
 #' @return DataFrame results of the classification of all the grid combinations
 #' @examples
+#' library(DelayedArray)
+#' 
 #' MyClassifier <- function(expr, clusters, target) {
 #'    c("T cell", 0.9)
 #' }
-#' rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-#'      CD8B=c(2,2,3,3))
+#' rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+#'      CD8B=c(2,2,3,3)))
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #' 

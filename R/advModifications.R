@@ -97,11 +97,15 @@ advModifications <- function(exprs, genes, clusters,
         exprs <- t(counts(exprs))
     }
     if (!is(exprs,'DelayedMatrix') && argForModif=="DelayedMatrix"){
-        message("Converting exprs object to a DelayedArray object")
+        if (verbose){
+            message("Converting exprs object to a DelayedArray object")
+        }
         exprs <- DelayedArray::DelayedArray(exprs)
     }
     if (!is(exprs,'data.frame') && argForModif=="data.frame"){
-        message("Converting exprs object to a data.frame object")
+        if (verbose){
+            message("Converting exprs object to a data.frame object")
+        }
         exprs <- as.data.frame(exprs)
     }
 
@@ -141,7 +145,7 @@ advModifications <- function(exprs, genes, clusters,
                 return(myGene)
             }
         }))
-        exprs[cellMask, numGenes] <- advFixedValue
+        exprs[cellMask, numGenes] <- rep(advFixedValue, length(exprs[cellMask, numGenes]))
     }
     if (advMethod == "perc99") {
         myGenes <- unlist(lapply(unique(genes), function(myGene){
