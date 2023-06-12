@@ -93,17 +93,19 @@ c("full_matrix_fct", myFct))
 }
 }
 \examples{
+library(DelayedArray)
+
 MyClassifier <- function(expr, clusters, target) {
    c("T cell", 0.9)
 }
-rna_expression <- data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
-     CD8B=c(2,2,3,3))
+rna_expression <- DelayedArray(data.frame(CD4=c(0,0,0,0), CD8A=c(1,1,1,1),
+     CD8B=c(2,2,3,3)))
 genes <- c("CD4", "CD8A")
 clusters_id <- c("B cell","B cell","T cell","T cell")
 
 advGridMinChange(rna_expression, clusters_id, "T cell",
-MyClassifier, genes=genes,
-modifications = list(c("perc1"), c("perc99")))
+ MyClassifier, genes=genes,
+ modifications = list(c("perc1"), c("perc99")))
 
 myModif = function(x){
    return(sample(1:10,1))
@@ -113,6 +115,6 @@ my_modifications = list(c("perc1"),
                         c("fixed", 1000),
                         c("full_matrix_fct", myModif))
 advGridMinChange(rna_expression, clusters_id, "T cell",
-MyClassifier, genes=genes, modifications = my_modifications)
+ MyClassifier, genes=genes, modifications = my_modifications)
 
 }

@@ -161,18 +161,6 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
     S4Vectors::DataFrame(dfResult)
 }
 
-.gridWarning <- function(modifications, genes, iamsure){
-    if ((length(modifications) + 1)^length(genes) > 100000 & !iamsure) {
-        message("Exit because of too many combinations to test: ", (length(modifications) + 1)^length(genes))
-        message("This will probably make your computer freeze.")
-        message("You should lower the number of genes and/or of modifications. For example 5 genes and 2 modifications",
-            " gives 243 combinations to test")
-        message("You can use the iamsure=TRUE option to run the function anyway.")
-        return(TRUE)
-    } else {
-        return (FALSE)
-    }
-}
 
 .minOverListModifs <- function(exprs, clusters, classifier, exclGenes,
                             genes, modifications, firstDichot, maxSplitSize,

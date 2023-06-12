@@ -64,8 +64,8 @@
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #' 
 #' advGridMinChange(rna_expression, clusters_id, "T cell",
-#' MyClassifier, genes=genes,
-#' modifications = list(c("perc1"), c("perc99")))
+#'  MyClassifier, genes=genes,
+#'  modifications = list(c("perc1"), c("perc99")))
 #' 
 #' myModif = function(x){
 #'    return(sample(1:10,1))
@@ -75,7 +75,7 @@
 #'                         c("fixed", 1000),
 #'                         c("full_matrix_fct", myModif))
 #' advGridMinChange(rna_expression, clusters_id, "T cell",
-#' MyClassifier, genes=genes, modifications = my_modifications)
+#'  MyClassifier, genes=genes, modifications = my_modifications)
 #' 
 #' @export
 advGridMinChange <- function(exprs, clusters, target, classifier,
@@ -135,7 +135,8 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     testsGrid <- gtools::permutations(n = length(modifications) + 1,
         r = length(genes), repeats.allowed = TRUE)
     results <- data.frame(matrix(ncol = length(genes) + 2, nrow = 0))
-    colnames(results) <- c(genes, "prediction", "odd"); i <- 1
+    colnames(results) <- c(genes, "prediction", "odd")
+    i <- 1
     while (i <= nrow(testsGrid)) {
         if (verbose || log2(i) == round(log2(i)) || i == nrow(testsGrid)){
             message("Running combination: ", i, " on ", nrow(testsGrid))
@@ -150,7 +151,7 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
                     exprsTemp <- advModifications(exprsTemp, genes[geneInd],
                         clusters, target, advMethod = mod1, verbose = verbose,
                         argForModif=argForModif)
-                } else {
+                } else {                    
                     mod2 <- modifications[[modifInd]][[2]]
                     exprsTemp <- advModifications(exprsTemp, genes[geneInd],
                         clusters, target, advMethod = mod1, advFct = mod2,
@@ -185,4 +186,17 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     functionResults <- functionResults[order(functionResults$typeModified,
             decreasing = TRUE), ]
     S4Vectors::DataFrame(functionResults)
+}
+
+.gridWarning <- function(modifications, genes, iamsure){
+    if ((length(modifications) + 1)^length(genes) > 100000 & !iamsure) {
+        message("Exit because of too many combinations to test: ", (length(modifications) + 1)^length(genes))
+        message("This will probably make your computer freeze.")
+        message("You should lower the number of genes and/or of modifications. For example 5 genes and 2 modifications",
+            " gives 243 combinations to test")
+        message("You can use the iamsure=TRUE option to run the function anyway.")
+        return(TRUE)
+    } else {
+        return (FALSE)
+    }
 }

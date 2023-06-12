@@ -145,7 +145,7 @@ advModifications <- function(exprs, genes, clusters,
                 return(myGene)
             }
         }))
-        exprs[cellMask, numGenes] <- rep(advFixedValue, length(exprs[cellMask, numGenes]))
+        exprs[cellMask, numGenes] <- as.numeric(advFixedValue)
     }
     if (advMethod == "perc99") {
         myGenes <- unlist(lapply(unique(genes), function(myGene){
