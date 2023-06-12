@@ -26,9 +26,10 @@
 #'  the genes list is split in two, and the dichotomic process continues.
 #' 
 #' @param exprs DelayedMatrix of numeric RNA expression, cells are rows and genes
-#' are columns - or a SingleCellExperiment object, a matrix or a data.frame. By
-#' default matrix and data.frame are converted to DelayedMatrix for memory
-#' performance, see 'argForModif' argument for options.
+#' are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
+#' these are converted to a data.frame to increase speed performance during modifications.
+#' However, this conversion can consume a significant amount of memory, see 'argForModif'
+#' argument for options.
 #' @param clusters a character vector of the clusters to which the cells belong
 #' @param target the name of the cluster to modify
 #' @param classifier a classifier in the suitable format.
@@ -62,6 +63,8 @@
 #' @param argForClassif the type of the first argument to feed to the
 #' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
 #' or 'data.frame'.
+#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
+#' by default. Can be 'data.frame', which is faster, but need more memory.
 #' @param exprs DelayedMatrix of numeric RNA expression, cells are rows and genes
 #' are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
 #' these are converted to a data.frame to increase speed performance during modifications.
