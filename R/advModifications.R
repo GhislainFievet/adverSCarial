@@ -183,7 +183,7 @@ advModifications <- function(exprs, genes, clusters,
     if (advMethod == "full_row_fct" || advMethod == "fixed") {
         for (myGene in unique(genes)) {
             if (is(exprs[, myGene], "numeric")) {
-                exprs[cellMask, myGene] <- advFct(exprs[, myGene])
+                exprs[cellMask, myGene] <- advFct(exprs[, myGene], cellMask)
             }
         }
     }
@@ -215,7 +215,7 @@ advModifications <- function(exprs, genes, clusters,
                 return(NULL)
             }
         }))
-        exprs[cellMask, numGenes] <- advFct(exprs[, numGenes])
+        exprs[cellMask, numGenes] <- advFct(exprs[, numGenes], cellMask)
     }
     exprs
 }

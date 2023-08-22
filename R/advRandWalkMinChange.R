@@ -3,7 +3,7 @@
 #' 
 #' @details The parameter search by grid can take a long time,
 #' this function aims to make a parameter search faster.
-#' We have a function, advMinChange, looking for one gene attacks.
+#' We have a function, advSingleGene, looking for one gene attacks.
 #' The advRandWalkMinChange function aims to find a multiple genes
 #' attack, with the fewer genes possible.
 #' At first the user have to provide a list of genes to test, for

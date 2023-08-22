@@ -106,7 +106,7 @@ markers <- c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A",
 
 Modify the value of a gene inside a cell cluster in order to change its classification.
 
-The function `advMinChange` runs a dichotomic search of one gene attacks, given the cluster to attack and a type of modification. We suggest two main modifications: `perc1` replacing the value of the gene by its first percentile, and `perc99` replacing the value of the gene by its 99th percentile. The `adv_fct` argument allows users to choose custom modifications of the gene.
+The function `advSingleGene` runs a dichotomic search of one gene attacks, given the cluster to attack and a type of modification. We suggest two main modifications: `perc1` replacing the value of the gene by its first percentile, and `perc99` replacing the value of the gene by its 99th percentile. The `adv_fct` argument allows users to choose custom modifications of the gene.
 
 The `excl_genes` argument allows users to exclude certain genes from being modified. Here we exclude the genes usually used as markers of specific cell types, as defined previously.
 
@@ -115,7 +115,7 @@ Computation times can be lengthy, we use the `return_first_found` argument to re
 We can specify the `change_type = "not_na"` argument to indicate that we want the attack to misclassify the cluster as an existing cell type, rather than as NA.
 
 ```{r search min change attack, message=FALSE, warning = FALSE}
-genesMinChange <- advMinChange(matPbmc, cellTypes, "DC",
+genesMinChange <- advSingleGene(matPbmc, cellTypes, "DC",
                         MClassifier, exclGenes = markers, advMethod = "perc99",
                         returnFirstFound = TRUE, changeType = "not_na",
                         firstDichot = 10)

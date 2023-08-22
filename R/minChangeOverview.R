@@ -1,14 +1,14 @@
 #' Gives an overview of the susceptibility to min change
 #' attacks, for each cell type, for a given list of modifications.
 #'
-#' @details Running the advMinChange function for each cell type
+#' @details Running the advSingleGene function for each cell type
 #' to see which ones are more vulerable can take a long time. The
 #' aim of the minChangeOverview function is to make this process faster.
 #' It uses a default value of 100 for the 'maxSplitSize' parameter. So,
-#' the dichotomic process of the advMinChange function stops as soon
+#' the dichotomic process of the advSingleGene function stops as soon
 #' as the fold length is lower than 100. You can have more accurate
 #' results with maxSplitSize=1, but it will take longer.
-#' This function aims also to run the advMinChange for several given
+#' This function aims also to run the advSingleGene for several given
 #' modifications. You can specify a list of modifications as so - each
 #' item of the list should be 1 or 2 length size.
 #' The 1 length vector must contain the prerecorded modifications, 'perc1'
@@ -179,14 +179,14 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
                 message("Modification: ", paste(modifications[[modifInd]], collapse = " "))
             }
             if (length(modifications[[modifInd]]) == 1) {
-                minChangeGenes <- advMinChange(exprs, clusters, cellType,
+                minChangeGenes <- advSingleGene(exprs, clusters, cellType,
                     classifier, exclGenes = exclGenes, genes = genes,
                     advMethod = mod1, maxSplitSize = maxSplitSize,
                     firstDichot = firstDichot, changeType = changeType,
                     argForClassif = argForClassif, argForModif=argForModif, verbose = verbose)@values
             } else {
                 mod2 <- modifications[[modifInd]][[2]]
-                minChangeGenes <- advMinChange(exprs, clusters, cellType,
+                minChangeGenes <- advSingleGene(exprs, clusters, cellType,
                     classifier, exclGenes = exclGenes,
                     genes = genes,
                     advMethod = mod1, advFixedValue = mod2,
@@ -221,7 +221,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             message( "Running minChange attack on ", cellType, ", with a maxSplitSize of: ", maxSplitSize)
             message( "The smaller the maxSplitSize, the more precise the result will be, but it will take longer.")
         }
-        minChangeGenes <- advMinChange(exprs, clusters, cellType,
+        minChangeGenes <- advSingleGene(exprs, clusters, cellType,
             classifier,
             exclGenes = exclGenes,
             genes = genes, advMethod = advMethod,

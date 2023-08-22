@@ -45,7 +45,7 @@ setMethod("show", "advChar",
 #' adverSCarial class
 #' 
 #' \code{advList} is a class used to store the output values
-#' of the \code{advMinChange} function. The result can be a list
+#' of the \code{advSingleGene} function. The result can be a list
 #' of few thousands genes:cell_type key/values, so a specific *show*
 #' method is associated to this class to avoid overflooding the R
 #' scripts outputs.
@@ -60,7 +60,7 @@ setMethod("show", "advChar",
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #' 
-#' adv_min_change <- advMinChange(rna_expression, clusters_id,
+#' adv_min_change <- advSingleGene(rna_expression, clusters_id,
 #' "T cell", MyClassifier, advMethod="perc99")
 #' 
 #' adv_min_change

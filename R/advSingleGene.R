@@ -10,7 +10,7 @@
 #' The function is made as a two step parameter search. The first step is to
 #' split the genes in 'firstDichot' sets, 100 by default. Then each set is
 #' studied by a dichotomic process in a recursive function.
-#' The aim of sarting by a hight value of sets, instead of strating directly by
+#' The aim of sarting by a high value of sets, instead of starting directly by
 #' the dichotomic research is to avoid the following scenario: we modify 5000
 #' genes, the modification of one gene conpensates the modification of another.
 #' The classification remains unchanged, whereas there is a one gene
@@ -83,10 +83,10 @@
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #' 
-#' advMinChange(rna_expression, clusters_id,
+#' advSingleGene(rna_expression, clusters_id,
 #' "T cell", MyClassifier, advMethod="perc99")
 #' @export
-advMinChange <- function(exprs, clusters, target, classifier, exclGenes = c(),
+advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
         genes = c(), advMethod = "perc99", advFixedValue = 3,
         advFct = NULL, firstDichot = 100, maxSplitSize = 1,
         returnFirstFound = FALSE, changeType = "any",
