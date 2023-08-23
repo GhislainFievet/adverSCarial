@@ -70,6 +70,12 @@ The prerecorded modifications available for the advMethod argument are:
 the gene. It is as if we biologically switched off the gene.
 \item 'perc99', replace the value by the whole matrix 99 percentile value of
 the gene. It is as if we biologically switched on the gene to the maximum.
+\item 'random', replace the value by from a uniform distribution between min
+and max of the gene on the dataset
+\item 'positive_aberrant' replace value by 10,000 times the max value of the
+gene on the dataset
+\item 'negative_aberrant' replace value by -10,000 times the max value of the
+gene on the dataset
 The value of the advMethod argument can also be 'fixed', in this case the
 modification would be to replace the value of the gene of the wanted cells
 by the value of the argument 'advFixedValue'. This can be useful to test

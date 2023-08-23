@@ -12,6 +12,12 @@
 #'  the gene. It is as if we biologically switched off the gene.
 #' - 'perc99', replace the value by the whole matrix 99 percentile value of
 #'  the gene. It is as if we biologically switched on the gene to the maximum.
+#' - 'random', replace the value by from a uniform distribution between min 
+#' and max of the gene on the dataset
+#' - 'positive_aberrant' replace value by 10,000 times the max value of the
+#' gene on the dataset
+#' - 'negative_aberrant' replace value by -10,000 times the max value of the
+#' gene on the dataset
 #' The value of the advMethod argument can also be 'fixed', in this case the
 #' modification would be to replace the value of the gene of the wanted cells
 #' by the value of the argument 'advFixedValue'. This can be useful to test
@@ -109,16 +115,35 @@ advModifications <- function(exprs, genes, clusters,
         exprs <- as.data.frame(exprs)
     }
 
-    if (!is.function(advFct)) {
-        exprs <- .advModificationsNotFunction(exprs,
-                                    genes, clusters,
-                                    target, advMethod = advMethod,
-                                    advFixedValue = advFixedValue)
+    if (advMethod %in% c("random", "positive_aberrant", "negative_aberrant")){
+        if (advMethod == "random"){
+            exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                target, advMethod = "full_matrix_fct",
+                                advFct = .fctRand)
+        }
+        if (advMethod == "positive_aberrant"){
+            exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                target, advMethod = "full_row_fct",
+                                advFct = .fctAbbPos)
+        }
+        if (advMethod == "negative_aberrant"){
+            exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                target, advMethod = "full_row_fct",
+                                advFct = .fctAbbNeg)
+        }
     } else {
-        exprs <- .advModificationsFunction(exprs, genes, clusters,
-                            target, advMethod = advMethod,
-                            advFct = advFct)
+        if (!is.function(advFct)) {
+            exprs <- .advModificationsNotFunction(exprs,
+                                        genes, clusters,
+                                        target, advMethod = advMethod,
+                                        advFixedValue = advFixedValue)
+        } else {
+            exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                target, advMethod = advMethod,
+                                advFct = advFct)
+        }
     }
+
     if ( argForClassif == 'SingleCellExperiment'){
         exprs <- SingleCellExperiment(assays = list(counts = t(exprs)))
     }
@@ -130,6 +155,17 @@ advModifications <- function(exprs, genes, clusters,
     }
     exprs
 }
+
+# Function for the default "random" modification
+.fctRand <- function(x, cMask){
+    sample(min(x):max(x), sum(cMask), replace=T)
+}
+
+# Function for the default "positive_aberrant" modification
+.fctAbbPos <- function(x, y){10000*max(x)}
+
+# Function for the default "negative_aberrant" modification
+.fctAbbNeg <- function(x, y){-10000*max(x)}
 
 .advModificationsNotFunction <- function(exprs,
                             genes, clusters,
