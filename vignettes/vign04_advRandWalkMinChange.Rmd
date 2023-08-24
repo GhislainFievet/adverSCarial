@@ -1,3 +1,29 @@
+title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
+    classifiers to adversarial attacks"
+shorttitle: "adverSCarial"
+author: Ghislain FIEVET <ghislain.fievet@gmail.com>
+package: adverSCarial
+abstract: >
+    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
+    classifiers to adversarial attacks. The package is versatile and provides a format for integrating
+    any type of classifier. It offers functions for studying and generating two types of attacks,
+    min change attack and max change attack. The min change attack involves making a small modification
+    to the input to alter the classification. The max change attack involves making a large modification
+    to the input without changing its classification.
+    The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
+    against adversarial attacks.
+vignette: >
+  %\VignetteIndexEntry{Vign04_advRandWalkMinChange}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+  
+# advRandWalkMinChange
+
+The `CHETAH` classifier is not vulnerable to one gene attack on `DC`cluster. We can use the `advRandWalkMinChange` function to generate a more complex attack, still looking for a minimum change in the input.
+
+We will find a list of genes suscpetibles to move the classification by using the `findMarkers` function from `scran`. Then we will use the `advRandWalkMinChange`
+function to shorten the list as much as possible.
+
 # Load data
   
 
