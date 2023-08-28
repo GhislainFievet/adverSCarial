@@ -1,9 +1,9 @@
-#' Gives an overview of the susceptibility to min change
+#' Gives an overview of the susceptibility to single gene
 #' attacks, for each cell type, for a given list of modifications.
 #'
 #' @details Running the advSingleGene function for each cell type
 #' to see which ones are more vulerable can take a long time. The
-#' aim of the minChangeOverview function is to make this process faster.
+#' aim of the singleGeneOverview function is to make this process faster.
 #' It uses a default value of 100 for the 'maxSplitSize' parameter. So,
 #' the dichotomic process of the advSingleGene function stops as soon
 #' as the fold length is lower than 100. You can have more accurate
@@ -18,7 +18,7 @@
 #'  replaced by.
 #'  - 'full_row_fct', 'target_row_fct', 'target_matrix_fct' or
 #'  'full_matrix_fct'. In this case the second item should be a function.
-#' Let's say we want to analysis the susceptibility to min change attack
+#' Let's say we want to analysis the susceptibility to single gene attack
 #' for 3 modifications: "perc1", the modification of each value of the
 #' cluster by 1000, and a custom modification stored inside a function myFct.
 #' Then the 'modification' parameter should be:
@@ -67,7 +67,7 @@
 #' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
 #' by default. Can be 'data.frame', which is faster, but need more memory.
 #' @param verbose logical, set to TRUE to activate verbose mode
-#' @return a DataFrame storing the number of possible min change
+#' @return a DataFrame storing the number of possible single gene
 #' attacks each cell type and each modification.
 #' @examples
 #' library(DelayedArray)
@@ -80,7 +80,7 @@
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","B cell","T cell","T cell")
 #'
-#' minChangeOverview(rna_expression, clusters_id,
+#' singleGeneOverview(rna_expression, clusters_id,
 #' MyClassifier, modifications = list(c("perc1"), c("perc99")))
 #' 
 #' myModif = function(x){
@@ -90,11 +90,11 @@
 #' my_modifications = list(c("perc1"),
 #'                         c("fixed", 1000),
 #'                         c("full_matrix_fct", myModif))
-#' minChangeOverview(rna_expression, clusters_id,
+#' singleGeneOverview(rna_expression, clusters_id,
 #'  MyClassifier, modifications = my_modifications)
 #' 
 #' @export
-minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
+singleGeneOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             genes = c(), modifications = list(c("perc1"), c("perc99")),
             advMethod = "perc99", advFixedValue = 3, advFct = NULL,
             firstDichot = 100, maxSplitSize = 100, changeType = "any",
@@ -174,7 +174,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
         mod1 <- modifications[[modifInd]][[1]]
         attacksLength <- vapply(unique(clusters), function(cellType){
             if (verbose) {
-                message("Running minChange attack on ", cellType, ", with a maxSplitSize of: ", maxSplitSize)
+                message("Running single gene attack on ", cellType, ", with a maxSplitSize of: ", maxSplitSize)
                 message("The smaller the maxSplitSize, the more precise the result will be, but it will take longer.")
                 message("Modification: ", paste(modifications[[modifInd]], collapse = " "))
             }
@@ -200,7 +200,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             }
             resultLength <- length(minChangeGenes)
             if (verbose) {
-                message("An approximation gives about ", resultLength, " genes can cause a one gene min change attack on the ",
+                message("An approximation gives about ", resultLength, " genes can cause a single gene attack on the ",
                     cellType, " cell type for the modification ", paste(modifications[[modifInd]], collapse = " "))
             }
             return(resultLength)
@@ -218,7 +218,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
                     firstDichot, maxSplitSize, changeType, argForClassif, argForModif, verbose) {
     attacksLength <- vapply(unique(clusters), function(cellType){
         if (verbose) {
-            message( "Running minChange attack on ", cellType, ", with a maxSplitSize of: ", maxSplitSize)
+            message( "Running single gene attack on ", cellType, ", with a maxSplitSize of: ", maxSplitSize)
             message( "The smaller the maxSplitSize, the more precise the result will be, but it will take longer.")
         }
         minChangeGenes <- advSingleGene(exprs, clusters, cellType,
@@ -236,7 +236,7 @@ minChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
         )@values
         resultLength <- length(minChangeGenes)
         if (verbose) {
-            message( "An approximation gives about ", resultLength, " genes can cause a one gene min change attack on the ",
+            message( "An approximation gives about ", resultLength, " genes can cause a single gene attack on the ",
                 cellType, " cell type")
         }
         return(resultLength)

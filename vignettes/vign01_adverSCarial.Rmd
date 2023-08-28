@@ -8,7 +8,7 @@ abstract: >
     adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
     classifiers to adversarial attacks. The package is versatile and provides a format for integrating
     any type of classifier. It offers functions for studying and generating two types of attacks,
-    min change attack and max change attack. The min change attack involves making a small modification
+    single gene attack and max change attack. The single gene attack involves making a small modification
     to the input to alter the classification. The max change attack involves making a large modification
     to the input without changing its classification.
     The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
@@ -34,8 +34,8 @@ de Hond, A.A.H., Leeuwenberg, A.M., Hooft, L. et al. Guidelines and quality crit
 
 
 The package is designed to generate and analyze the vulnerability of scRNA-seq classifiers to adversarial attacks. The package is versatile and provides a format for integrating
-any type of classifier. It offers functions for studying and generating two types of attacks, min change attack and max change attack.
-The min change attack involves making a small modification to the input to alter the classification. This is an issue when the change of classification is made on a gene that is not known to be biologicaly involved in the change of this cell type.
+any type of classifier. It offers functions for studying and generating two types of attacks, single gene attack and max change attack.
+The single gene attack involves making a small modification to the input to alter the classification. This is an issue when the change of classification is made on a gene that is not known to be biologicaly involved in the change of this cell type.
 The max change attack involves making a large modification to the input without changing its classification. This is an issue when a significant percentage of genes, sometimes as high as 99%, can be modified with the classifier still predicting the same cell type.
 
 
@@ -50,7 +50,7 @@ BiocManager::install('adverSCarial')
 
 # Generate an adversarial attack
 
-There are two types of adversarial attacks: `min change attack` which modifies slightly the input in order to alter the classification, and `max change attack` which introduce the largest possible perturbations to the input while still keeping the same classification.
+There are two types of adversarial attacks: `single gene attack` which modifies slightly the input in order to alter the classification, and `max change attack` which introduce the largest possible perturbations to the input while still keeping the same classification.
 
 Load libraries
 
@@ -102,7 +102,7 @@ markers <- c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
 ```
 
-## Min change attack
+## Single Gene attack
 
 Modify the value of a gene inside a cell cluster in order to change its classification.
 
