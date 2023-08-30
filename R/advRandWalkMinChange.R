@@ -87,7 +87,7 @@
 #'  MyClassifier, genes=genes,
 #'  modifications = list(c("perc1"), c("perc99")), walkLength=0)
 #' 
-#' myModif = function(x){
+#' myModif = function(x, y){
 #'    return(sample(1:10,1))
 #' }
 #' 

@@ -123,7 +123,7 @@ clusters_id <- c("B cell","B cell","T cell","T cell")
 maxChangeOverview(rna_expression, clusters_id,
 MyClassifier, modifications = list(c("perc1"), c("perc99")))
 
-myModif = function(x){
+myModif = function(x, y){
    return(sample(1:10,1))
 }
 
