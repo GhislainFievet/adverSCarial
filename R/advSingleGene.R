@@ -188,9 +188,9 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
                     advFixedValue = advFixedValue, advFct = advFct,
                     maxSplitSize = maxSplitSize,
                     returnFirstFound = returnFirstFound,
-                    changeType=changeType,
-                    argForClassif=argForClassif,
-                    argForModif=argForModif,
+                    changeType = changeType,
+                    argForClassif = argForClassif,
+                    argForModif = argForModif,
                     verbose = verbose)
             if ( lastResLength == 0 ){
                 lastResLength <<- length(temp_result)
@@ -220,7 +220,7 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
             clusters, target, classifier,
             advMethod = advMethod,
             advFixedValue = advFixedValue, advFct = advFct,
-            argForClassif = argForClassif, argForModif=argForModif, verbose = verbose)
+            argForClassif = argForClassif, argForModif = argForModif, verbose = verbose)
         cellType <- modObj[1]
         celltypeScore <- modObj[2]
         if (verbose){

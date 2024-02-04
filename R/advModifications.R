@@ -18,6 +18,8 @@
 #' gene on the dataset
 #' - 'negative_aberrant' replace value by -10,000 times the max value of the
 #' gene on the dataset
+#' - 'decile+X', shifts the gene value by + X deciles.
+#' - 'decile-X', shifts the gene value by - X deciles.
 #' The value of the advMethod argument can also be 'fixed', in this case the
 #' modification would be to replace the value of the gene of the wanted cells
 #' by the value of the argument 'advFixedValue'. This can be useful to test
@@ -132,15 +134,30 @@ advModifications <- function(exprs, genes, clusters,
                                 advFct = .fctAbbNeg)
         }
     } else {
-        if (!is.function(advFct)) {
-            exprs <- .advModificationsNotFunction(exprs,
-                                        genes, clusters,
-                                        target, advMethod = advMethod,
-                                        advFixedValue = advFixedValue)
+        if (startsWith(advMethod, "decile")){
+            if ( unlist(strsplit(advMethod, "\\+"))[1] == "decile" ){
+                decilNumber <- as.numeric(unlist(strsplit(advMethod, "\\+")))[2]
+                exprs <- .advModificationsFunction(exprs, genes, clusters,
+                            target, advMethod = "full_row_fct",
+                            advFct = function(x,y){.advDecil(x,y,decilNumber=decilNumber)})
+            }
+            if ( unlist(strsplit(advMethod, "\\-"))[1] == "decile" ){
+                decilNumber <- - as.numeric(unlist(strsplit(advMethod, "\\-")))[2]
+                exprs <- .advModificationsFunction(exprs, genes, clusters,
+                            target, advMethod = "full_row_fct",
+                            advFct = function(x,y){.advDecil(x,y,decilNumber=decilNumber)})
+            }
         } else {
-            exprs <- .advModificationsFunction(exprs, genes, clusters,
-                                target, advMethod = advMethod,
-                                advFct = advFct)
+            if (!is.function(advFct)) {
+                exprs <- .advModificationsNotFunction(exprs,
+                                            genes, clusters,
+                                            target, advMethod = advMethod,
+                                            advFixedValue = advFixedValue)
+            } else {
+                exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                    target, advMethod = advMethod,
+                                    advFct = advFct)
+            }
         }
     }
 
@@ -254,5 +271,26 @@ advModifications <- function(exprs, genes, clusters,
         exprs[cellMask, numGenes] <- advFct(exprs[, numGenes], cellMask)
     }
     exprs
+}
+
+.advDecil <- function(x, y, decilNumber=1){
+    orderedX <- x[order(x)]
+    modValues <- unlist(lapply(x[y], function(val){
+        xRank <- sum(orderedX < val)
+        if ( decilNumber > 0){
+            if ( xRank + round(decilNumber*length(x) / 10) > length(x) ){
+                return(max(x))
+            } else {
+                return(orderedX[xRank + round(decilNumber*length(x) / 10)])
+            }
+        } else {
+            if ( xRank + round(decilNumber*length(x) / 10) < 1 ){
+                return(min(x))
+            } else {
+                return(orderedX[xRank + round(decilNumber*length(x) / 10)])
+            }
+        }
+    }))
+    modValues
 }
 

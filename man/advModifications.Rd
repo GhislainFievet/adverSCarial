@@ -76,6 +76,8 @@ and max of the gene on the dataset
 gene on the dataset
 \item 'negative_aberrant' replace value by -10,000 times the max value of the
 gene on the dataset
+\item 'decile+X', shifts the gene value by + X deciles.
+\item 'decile-X', shifts the gene value by - X deciles.
 The value of the advMethod argument can also be 'fixed', in this case the
 modification would be to replace the value of the gene of the wanted cells
 by the value of the argument 'advFixedValue'. This can be useful to test

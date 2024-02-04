@@ -168,7 +168,7 @@ maxChangeOverview <- function(exprs, clusters, classifier, exclGenes = c(),
                 message("Modification: ", paste(modifications[[modifInd]], collapse = " "))
             }
             if (length(modifications[[modifInd]]) == 1) {
-                maxChangeGenes <- advMaxChange(exprs, clusters, cellType,
+                maxChangeGenes <- advMaxChange(exprs,clusters, cellType,
                     classifier, advMethod = mod1,
                     maxSplitSize = maxSplitSize, exclGenes = exclGenes,
                     genes = genes, argForClassif = argForClassif, argForModif=argForModif, verbose = verbose)
