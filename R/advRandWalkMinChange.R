@@ -60,10 +60,10 @@
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-#' or 'data.frame'.
-#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
-#' by default. Can be 'data.frame', which is faster, but need more memory.
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' or 'DelayedMatrix'.
+#' @param argForModif type of matrix during for the modification, 'data.frame'
+#' by default. Can be 'DelayedMatrix', which needs less memory but is slower.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return DataFrame results of the classification of all the grid combinations
 #' @examples
@@ -100,8 +100,8 @@
 advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         modifications = list(c("perc1"), c("perc99")), firstBatch = 100,
         walkLength = 100, stepChangeRatio = 0.2, whileMaxCount = 10000,
-        changeType = "any", argForClassif = 'DelayedMatrix',
-        argForModif = 'DelayedMatrix',
+        changeType = "any", argForClassif = 'data.frame',
+        argForModif = 'data.frame',
         verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
         !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){

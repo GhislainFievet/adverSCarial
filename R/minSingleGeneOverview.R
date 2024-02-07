@@ -62,10 +62,10 @@
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-#' or 'data.frame'.
-#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
-#' by default. Can be 'data.frame', which is faster, but need more memory.
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' or 'DelayedMatrix'.
+#' @param argForModif type of matrix during for the modification, 'data.frame'
+#' by default. Can be 'DelayedMatrix', which needs less memory but is slower.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a DataFrame storing the number of possible single gene
 #' attacks each cell type and each modification.
@@ -98,7 +98,7 @@ singleGeneOverview <- function(exprs, clusters, classifier, exclGenes = c(),
             genes = c(), modifications = list(c("perc1"), c("perc99")),
             advMethod = "perc99", advFixedValue = 3, advFct = NULL,
             firstDichot = 100, maxSplitSize = 100, changeType = "any",
-            argForClassif = 'DelayedMatrix', argForModif = 'data.frame',
+            argForClassif = 'data.frame', argForModif = 'data.frame',
             verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
         !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){

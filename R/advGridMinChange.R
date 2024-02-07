@@ -44,10 +44,10 @@
 #' @param returnFirstFound set to TRUE to return result when a
 #' the first misclassification is found
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-#' or 'data.frame'.
-#' @param argForModif type of matrix for the modification, 'DelayedMatrix'
-#' by default. Can be 'data.frame', which is faster, but need more memory.
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' or 'DelayedMatrix'.
+#' @param argForModif type of matrix during for the modification, 'data.frame'
+#' by default. Can be 'DelayedMatrix', which needs less memory but is slower.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @param iamsure logical, prevents from expansive calculations
 #' when `genes` list is too long, set to `TRUE` to run anyway.
@@ -80,8 +80,8 @@
 #' @export
 advGridMinChange <- function(exprs, clusters, target, classifier,
                 genes, modifications = list(c("perc1"), c("perc99")),
-                returnFirstFound = FALSE, argForClassif = 'DelayedMatrix',
-                argForModif = 'DelayedMatrix',
+                returnFirstFound = FALSE, argForClassif = 'data.frame',
+                argForModif = 'data.frame',
                 verbose = FALSE, iamsure = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
         !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){

@@ -57,10 +57,10 @@
 #' `target_matrix_fct`, `full_matrix_fct`
 #' @param maxSplitSize max size of dichotomic slices.
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-#' or 'data.frame'.
-#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
-#' by default. Can be 'data.frame', which is faster, but need more memory.
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' or 'DelayedMatrix'.
+#' @param argForModif type of matrix during for the modification, 'data.frame'
+#' by default. Can be 'DelayedMatrix', which needs less memory but is slower.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a character vector of genes you can modify on a cluster without
 #' modifying its classification
@@ -81,7 +81,7 @@
 advMaxChange <- function(exprs, clusters, target, classifier,
                         exclGenes = c(), genes = c(), advMethod = "perc99",
                         advFixedValue = 3, advFct = NULL,
-                        maxSplitSize = 1, argForClassif = 'DelayedMatrix',
+                        maxSplitSize = 1, argForClassif = 'data.frame',
                         argForModif = 'data.frame',
                         verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&

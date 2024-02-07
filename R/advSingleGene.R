@@ -61,10 +61,10 @@
 #' @param changeType `any` consider each misclassification,
 #'  `not_na` consider each misclassification but NA.
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-#' or 'data.frame'.
-#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
-#' by default. Can be 'data.frame', which is faster, but need more memory.
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' or 'DelayedMatrix'.
+#' @param argForModif type of matrix during for the modification, 'data.frame'
+#' by default. Can be 'DelayedMatrix', which needs less memory but is slower.
 #' @param exprs DelayedMatrix of numeric RNA expression, cells are rows and genes
 #' are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
 #' these are converted to a data.frame to increase speed performance during modifications.
@@ -90,7 +90,7 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
         genes = c(), advMethod = "perc99", advFixedValue = 3,
         advFct = NULL, firstDichot = 100, maxSplitSize = 1,
         returnFirstFound = FALSE, changeType = "any",
-        argForClassif = 'DelayedMatrix', argForModif = 'data.frame',
+        argForClassif = 'data.frame', argForModif = 'data.frame',
         verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
         !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){
