@@ -30,10 +30,10 @@
 #' belongs to the following list: `full_row_fct`, `target_row_fct`,
 #' `target_matrix_fct`, `full_matrix_fct`
 #' @param argForClassif the type of the first argument to feed to the
-#' classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-#' or 'data.frame'.
-#' @param argForModif type of matrix during for the modification, 'DelayedMatrix'
-#' by default. Can be 'data.frame', which is faster, but need more memory.
+#' classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+#' or 'DelayedMatrix'.
+#' @param argForModif type of matrix during for the modification, 'data.frame'
+#' by default. Can be 'DelayedMatrix', which is slower, but need less memory.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a vector of the classification, and the associated odd
 #' @examples
@@ -55,11 +55,13 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
                                 classifier, advMethod = "perc99",
                                 advFixedValue = 3,
                                 advFct = NULL,
-                                argForClassif = 'DelayedMatrix',
-                                argForModif = 'DelayedMatrix',
+                                argForClassif = 'data.frame',
+                                argForModif = 'data.frame',
+                                slot=NULL,
                                 verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
-        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){
+        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix') &&
+        !is(exprs,'Seurat')){
         stop("The argument exprs must be a DelayedMatrix, a SingleCellExperiment, a matrix or a data.frame")
     }
     if (!is.character(genes)) {
@@ -88,6 +90,7 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
         message("Modify data for ", length(genes), " genes for cluster ", target)
     }
 
+                message("predictWithNewValue ", argForModif, " ", argForClassif)
     modifExprs <- advModifications(exprs,
         genes,
         clusters,
@@ -96,8 +99,13 @@ predictWithNewValue <- function(exprs, genes, clusters, target,
         advFixedValue = advFixedValue,
         advFct = advFct,
         argForClassif = argForClassif,
-        argForModif = argForModif
+        argForModif = argForModif,
+        slot = slot
     )
+
+    if(verbose){
+        message(class(modifExprs))
+    }
 
     classifier(modifExprs, clusters, target)
 }

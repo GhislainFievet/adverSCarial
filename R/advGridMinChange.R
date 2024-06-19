@@ -116,7 +116,7 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
     }
 
     if (is(exprs,'SingleCellExperiment') ){
-        exprs <- t(counts(exprs))
+        exprs <- t(as.matrix(counts(exprs)))
     }
     if (!is(exprs,'DelayedMatrix') && argForModif=="DelayedMatrix"){
         message("Converting exprs object to a DelayedArray object")
@@ -171,6 +171,8 @@ advGridMinChange <- function(exprs, clusters, target, classifier,
             exprsTemp <- DelayedArray::DelayedArray(exprsTemp)
         }
         classResults <- classifier(exprsTemp, clusters, target)
+        classResults <- c(unlist(unname(classResults[1])),
+                            unlist(unname(classResults[2])))
         rowResults <- c(rowResults, classResults[1], classResults[2])
         results <- rbind(results, rowResults)
         colnames(results) <- c(genes, "prediction", "odd")

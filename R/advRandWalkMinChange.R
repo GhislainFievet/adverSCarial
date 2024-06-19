@@ -144,7 +144,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         stop("The argument verbose must be logical.")
     }
     if (is(exprs,'SingleCellExperiment') ){
-        exprs <- t(counts(exprs))
+        exprs <- t(as.matrix(counts(exprs)))
     }
     if (!is(exprs,'DelayedMatrix') && argForModif=="DelayedMatrix"){
         message("Converting exprs object to a DelayedArray object")
@@ -234,6 +234,7 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
         exprsTemp <- DelayedArray::DelayedArray(exprsTemp)
     }
     classResults <- classifier(exprsTemp, clusters, target)
+    classResults <- c(unlist(unname(classResults[1])), unlist(unname(classResults[2])))
     typeModified <- classResults[1] != target
     if ( changeType == "not_na")
         typeModified <- (classResults[1] != target) &&
@@ -378,9 +379,9 @@ advRandWalkMinChange <- function(exprs, clusters, target, classifier, genes,
             exprsTemp <- DelayedArray::DelayedArray(exprsTemp)
         }
         classResults <- classifier(exprsTemp, clusters, target)
+        classResults <- c(unlist(unname(classResults[1])), unlist(unname(classResults[2])))
         rowResults <- c(rowResults, classResults[1], classResults[2])
-        rowResultsInt <- c(unlist(rowResultsInt),
-                    classResults[1], classResults[2])
+        rowResultsInt <- c(unlist(rowResultsInt), classResults[1], classResults[2])
         results <- rbind(results, rowResults)
         resultsInt <- rbind(resultsInt, rowResultsInt)
         colnames(results) <- c(genes, "prediction", "odd")

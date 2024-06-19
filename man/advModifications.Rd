@@ -15,6 +15,7 @@ advModifications(
   advFct = NULL,
   argForClassif = "DelayedMatrix",
   argForModif = "data.frame",
+  slot = NULL,
   verbose = FALSE
 )
 }

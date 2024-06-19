@@ -15,8 +15,9 @@ predictWithNewValue(
   advMethod = "perc99",
   advFixedValue = 3,
   advFct = NULL,
-  argForClassif = "DelayedMatrix",
-  argForModif = "DelayedMatrix",
+  argForClassif = "data.frame",
+  argForModif = "data.frame",
+  slot = NULL,
   verbose = FALSE
 )
 }
@@ -53,11 +54,11 @@ belongs to the following list: \code{full_row_fct}, \code{target_row_fct},
 \code{target_matrix_fct}, \code{full_matrix_fct}}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-or 'data.frame'.}
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+or 'DelayedMatrix'.}
 
-\item{argForModif}{type of matrix during for the modification, 'DelayedMatrix'
-by default. Can be 'data.frame', which is faster, but need more memory.}
+\item{argForModif}{type of matrix during for the modification, 'data.frame'
+by default. Can be 'DelayedMatrix', which is slower, but need less memory.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }

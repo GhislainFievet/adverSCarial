@@ -74,10 +74,13 @@
 advModifications <- function(exprs, genes, clusters,
                             target, advMethod = "perc99",
                             advFixedValue = 3, advFct = NULL,
-                            argForClassif = 'DelayedMatrix', argForModif = 'data.frame',
+                            argForClassif = 'DelayedMatrix',
+                            argForModif = 'data.frame',
+                            slot=NULL,
                             verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
-        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){
+        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix') &&
+        !is(exprs,'Seurat')){
         stop("The argument exprs must be a DelayedMatrix, a SingleCellExperiment, a matrix or a data.frame")
     }
     if (!is.character(genes)) {
@@ -101,8 +104,16 @@ advModifications <- function(exprs, genes, clusters,
     if (verbose) {
         message("Modify data for ", length(genes), " genes for cluster ", target)
     }
+    # if (is(exprs,'Seurat') && tolower(argForModif)=="seurat"){
+    if (is(exprs,'Seurat')){
+        so_exprs <- exprs
+        exprs <- as.data.frame(so_exprs@assays$RNA@layers[[slot]])
+        colnames(exprs) <- rownames(so_exprs@assays$RNA@cells)
+        rownames(exprs) <- rownames(so_exprs@assays$RNA@features)
+        exprs <- as.data.frame(t(exprs))
+    }
     if (is(exprs,'SingleCellExperiment') ){
-        exprs <- t(counts(exprs))
+        exprs <- t(as.matrix(counts(exprs)))
     }
     if (!is(exprs,'DelayedMatrix') && argForModif=="DelayedMatrix"){
         if (verbose){
@@ -110,6 +121,8 @@ advModifications <- function(exprs, genes, clusters,
         }
         exprs <- DelayedArray::DelayedArray(exprs)
     }
+
+
     if (!is(exprs,'data.frame') && argForModif=="data.frame"){
         if (verbose){
             message("Converting exprs object to a data.frame object")
@@ -117,47 +130,60 @@ advModifications <- function(exprs, genes, clusters,
         exprs <- as.data.frame(exprs)
     }
 
-    if (advMethod %in% c("random", "positive_aberrant", "negative_aberrant")){
-        if (advMethod == "random"){
-            exprs <- .advModificationsFunction(exprs, genes, clusters,
-                                target, advMethod = "full_matrix_fct",
-                                advFct = .fctRand)
-        }
-        if (advMethod == "positive_aberrant"){
-            exprs <- .advModificationsFunction(exprs, genes, clusters,
-                                target, advMethod = "full_row_fct",
-                                advFct = .fctAbbPos)
-        }
-        if (advMethod == "negative_aberrant"){
-            exprs <- .advModificationsFunction(exprs, genes, clusters,
-                                target, advMethod = "full_row_fct",
-                                advFct = .fctAbbNeg)
-        }
-    } else {
-        if (startsWith(advMethod, "decile")){
-            if ( unlist(strsplit(advMethod, "\\+"))[1] == "decile" ){
-                decilNumber <- as.numeric(unlist(strsplit(advMethod, "\\+")))[2]
+    
+    if (advMethod != "none"){
+        if (advMethod %in% c("random", "positive_aberrant", "negative_aberrant")){
+            if (advMethod == "random"){
                 exprs <- .advModificationsFunction(exprs, genes, clusters,
-                            target, advMethod = "full_row_fct",
-                            advFct = function(x,y){.advDecil(x,y,decilNumber=decilNumber)})
+                                    target, advMethod = "full_matrix_fct",
+                                    advFct = .fctRand)
             }
-            if ( unlist(strsplit(advMethod, "\\-"))[1] == "decile" ){
-                decilNumber <- - as.numeric(unlist(strsplit(advMethod, "\\-")))[2]
+            if (advMethod == "positive_aberrant"){
                 exprs <- .advModificationsFunction(exprs, genes, clusters,
-                            target, advMethod = "full_row_fct",
-                            advFct = function(x,y){.advDecil(x,y,decilNumber=decilNumber)})
+                                    target, advMethod = "full_row_fct",
+                                    advFct = .fctAbbPos)
+            }
+            if (advMethod == "negative_aberrant"){
+                exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                    target, advMethod = "full_row_fct",
+                                    advFct = .fctAbbNeg)
             }
         } else {
-            if (!is.function(advFct)) {
-                exprs <- .advModificationsNotFunction(exprs,
-                                            genes, clusters,
-                                            target, advMethod = advMethod,
-                                            advFixedValue = advFixedValue)
+            if (startsWith(advMethod, "decile")){
+                if ( unlist(strsplit(advMethod, "\\+"))[1] == "decile" ){
+                    decilNumber <- as.numeric(unlist(strsplit(advMethod, "\\+")))[2]
+                    exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                target, advMethod = "full_row_fct",
+                                advFct = function(x,y){.advDecil(x,y,decilNumber=decilNumber)})
+                }
+                if ( unlist(strsplit(advMethod, "\\-"))[1] == "decile" ){
+                    decilNumber <- - as.numeric(unlist(strsplit(advMethod, "\\-")))[2]
+                    exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                target, advMethod = "full_row_fct",
+                                advFct = function(x,y){.advDecil(x,y,decilNumber=decilNumber)})
+                }
             } else {
-                exprs <- .advModificationsFunction(exprs, genes, clusters,
-                                    target, advMethod = advMethod,
-                                    advFct = advFct)
+                if (!is.function(advFct)) {
+                    exprs <- .advModificationsNotFunction(exprs,
+                                                genes, clusters,
+                                                target, advMethod = advMethod,
+                                                advFixedValue = advFixedValue)
+                } else {
+                    exprs <- .advModificationsFunction(exprs, genes, clusters,
+                                        target, advMethod = advMethod,
+                                        advFct = advFct)
+                }
             }
+        }
+
+
+        if(tolower(argForClassif)=="seurat"){
+            so_exprs@assays$RNA@layers[[slot]] <- t(exprs)
+            exprs <- so_exprs
+        }
+    } else {
+        if(tolower(argForClassif)=="seurat"){
+            exprs <- so_exprs
         }
     }
 
@@ -170,6 +196,7 @@ advModifications <- function(exprs, genes, clusters,
     if (!is(exprs,'DelayedMatrix') && argForClassif=="DelayedMatrix"){
         exprs <- DelayedArray::DelayedArray(exprs)
     }
+
     exprs
 }
 
@@ -189,7 +216,7 @@ advModifications <- function(exprs, genes, clusters,
                             target, advMethod = "perc99",
                             advFixedValue = 3) {
     if (is(exprs,'SingleCellExperiment')){
-        exprs <- t(counts(exprs))
+        exprs <- t(as.matrix(counts(exprs)))
     }
     cellMask <- clusters == target
     if (advMethod == "fixed") {

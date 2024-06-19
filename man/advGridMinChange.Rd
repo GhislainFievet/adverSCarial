@@ -13,8 +13,8 @@ advGridMinChange(
   genes,
   modifications = list(c("perc1"), c("perc99")),
   returnFirstFound = FALSE,
-  argForClassif = "DelayedMatrix",
-  argForModif = "DelayedMatrix",
+  argForClassif = "data.frame",
+  argForModif = "data.frame",
   verbose = FALSE,
   iamsure = FALSE
 )
@@ -50,11 +50,11 @@ The function returns a vector with the classification result, and a score.}
 the first misclassification is found}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-or 'data.frame'.}
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+or 'DelayedMatrix'.}
 
-\item{argForModif}{type of matrix for the modification, 'DelayedMatrix'
-by default. Can be 'data.frame', which is faster, but need more memory.}
+\item{argForModif}{type of matrix during for the modification, 'data.frame'
+by default. Can be 'DelayedMatrix', which needs less memory but is slower.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 

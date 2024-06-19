@@ -18,7 +18,7 @@ singleGeneOverview(
   firstDichot = 100,
   maxSplitSize = 100,
   changeType = "any",
-  argForClassif = "DelayedMatrix",
+  argForClassif = "data.frame",
   argForModif = "data.frame",
   verbose = FALSE
 )
@@ -70,11 +70,11 @@ the dichotomic search}
 \code{not_na} consider each misclassification but NA.}
 
 \item{argForClassif}{the type of the first argument to feed to the
-classifier function. 'DelayedMatrix' by default, can be 'SingleCellExperiment'
-or 'data.frame'.}
+classifier function. 'data.frame' by default, can be 'SingleCellExperiment'
+or 'DelayedMatrix'.}
 
-\item{argForModif}{type of matrix during for the modification, 'DelayedMatrix'
-by default. Can be 'data.frame', which is faster, but need more memory.}
+\item{argForModif}{type of matrix during for the modification, 'data.frame'
+by default. Can be 'DelayedMatrix', which needs less memory but is slower.}
 
 \item{verbose}{logical, set to TRUE to activate verbose mode}
 }

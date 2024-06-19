@@ -65,11 +65,6 @@
 #' or 'DelayedMatrix'.
 #' @param argForModif type of matrix during for the modification, 'data.frame'
 #' by default. Can be 'DelayedMatrix', which needs less memory but is slower.
-#' @param exprs DelayedMatrix of numeric RNA expression, cells are rows and genes
-#' are columns - or a SingleCellExperiment object, a matrix or a data.frame. By default,
-#' these are converted to a data.frame to increase speed performance during modifications.
-#' However, this conversion can consume a significant amount of memory, see 'argForModif'
-#' argument for options.
 #' @param verbose logical, set to TRUE to activate verbose mode
 #' @return a list of genes/new classification tuples
 #' @examples
@@ -91,10 +86,11 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
         advFct = NULL, firstDichot = 100, maxSplitSize = 1,
         returnFirstFound = FALSE, changeType = "any",
         argForClassif = 'data.frame', argForModif = 'data.frame',
-        verbose = FALSE) {
+        slot=NULL, verbose = FALSE) {
     if (!is(exprs, 'matrix') && !is(exprs,'data.frame') &&
-        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix')){
-        stop("The argument exprs must be a DelayedMatrix, a SingleCellExperiment, a matrix or a data.frame")
+        !is(exprs,'SingleCellExperiment') && !is(exprs,'DelayedMatrix') &&
+        !is(exprs,'Seurat')){
+        stop("The argument exprs must be a DelayedMatrix, a SingleCellExperiment, a matrix, a data.frame or a Seurat object.")
     }
     if (!is.character(clusters)) {
         stop("The argument clusters must be a vector of character.")
@@ -134,7 +130,15 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
     }
 
     if (is(exprs,'SingleCellExperiment') ){
-        exprs <- t(counts(exprs))
+        exprs <- t(as.matrix(counts(exprs)))
+    }
+    if (is(exprs,'Seurat') && tolower(argForModif) !="seurat"){
+        so_expr <- exprs
+        dfScaled <- as.data.frame(exprs@assays$RNA@layers[[slot]])
+        colnames(dfScaled) <- rownames(exprs@assays$RNA@cells)
+        rownames(dfScaled) <- rownames(exprs@assays$RNA@features)
+        dfScaled <- as.data.frame(t(dfScaled))
+        exprs <- dfScaled
     }
     if (!is(exprs,'DelayedMatrix') && argForModif=="DelayedMatrix"){
         message("Converting exprs object to a DelayedArray object")
@@ -145,11 +149,22 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
         exprs <- as.data.frame(exprs)
     }
 
-    genesIndex <- seq_len(ncol(exprs))
+    if (tolower(argForClassif) == "seurat"){
+        genesIndex <- seq_len(nrow(exprs@assays$RNA@features))
+    } else {
+        genesIndex <- seq_len(ncol(exprs))
+    }
+
+    
     if (length(exclGenes) != 0 && length(genes) == 0) {
+        if (tolower(argForClassif) == "seurat"){
+            tempGenes <- rownames(exprs@assays$RNA@features)
+        } else {
+            tempGenes <- colnames(exprs)
+        }
         genesToRemove <- unlist(lapply(exclGenes, function(strGene){
-            if (!is.na(match(strGene, colnames(exprs)))) {
-                return(-match(strGene, colnames(exprs)))
+            if (!is.na(match(strGene, tempGenes))) {
+                return(-match(strGene, tempGenes))
             } else {
                 return(NULL)
             }
@@ -158,12 +173,17 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
             genesIndex <- genesIndex[genesToRemove]
     }
     if (length(genes) != 0) {
+        if (tolower(argForClassif) == "seurat"){
+            tempGenes <- rownames(exprs@assays$RNA@features)
+        } else {
+            tempGenes <- colnames(exprs)
+        }
         exclGenes <- unique(exclGenes)
         genes <- unique(genes)
         genesToKeep <- genes[!genes %in% exclGenes]
         indGenesToKeep <- unlist(lapply(genesToKeep), function(strGene){
-            if (!is.na(match(strGene, colnames(exprs)))) {
-                return(match(strGene, colnames(exprs)))
+            if (!is.na(match(strGene, tempGenes))) {
+                return(match(strGene, tempGenes))
             } else {
                 return(NULL)
             }
@@ -171,8 +191,16 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
         if (length(indGenesToKeep) != 0)
             genesIndex <- genesIndex[indGenesToKeep]
     }
+    if (verbose){message("genesIndex size: ", length(genesIndex))}
+
     cSplitIndex <- .custSplit(genesIndex, seq_len(firstDichot))
     lastResLength <<- 0
+    modObj <- predictWithNewValue(exprs, c("1"),
+            clusters, target, classifier,
+            advMethod = "none",
+            argForClassif = argForClassif, argForModif = argForModif,
+            slot=slot, verbose = verbose)
+    classifTarget <- unlist(unname(modObj[1]))
     lSplitsResults <- unlist(lapply(seq_len(firstDichot), function(i){
         prevTime <- Sys.time()
         if (lastResLength > 0 && returnFirstFound){
@@ -182,8 +210,14 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
             message(paste0("Split number: ", i, "/", firstDichot))
         }
         if (length(unlist(cSplitIndex[i])) != 0) {
+            if (tolower(argForClassif) == "seurat"){
+                myGenes <- rownames(exprs@assays$RNA@features)[unlist(cSplitIndex[i])]
+            } else {
+                myGenes <- colnames(exprs)[unlist(cSplitIndex[i])]
+            }
+
             temp_result <- .predictionDichotMinChange(exprs,
-                    colnames(exprs)[unlist(cSplitIndex[i])],
+                    myGenes,
                     clusters, target, classifier, advMethod = advMethod,
                     advFixedValue = advFixedValue, advFct = advFct,
                     maxSplitSize = maxSplitSize,
@@ -191,6 +225,8 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
                     changeType = changeType,
                     argForClassif = argForClassif,
                     argForModif = argForModif,
+                    slot=slot,
+                    classifTarget = classifTarget,
                     verbose = verbose)
             if ( lastResLength == 0 ){
                 lastResLength <<- length(temp_result)
@@ -211,23 +247,29 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
 .dichotMinSplit <- function(lResults, cGeneSplitValue, exprs,
             genes, clusters, target, classifier, advMethod, advFixedValue,
             advFct, maxSplitSize, changeType, returnFirstFound, argForClassif, 
-            argForModif, verbose){
+            argForModif, slot, classifTarget, verbose){
+
     if (length(cGeneSplitValue) != 0) {
         if (verbose) {
             message("before predictWithNewValue")
             message(length(cGeneSplitValue))}
+
         modObj <- predictWithNewValue(exprs, cGeneSplitValue,
             clusters, target, classifier,
             advMethod = advMethod,
             advFixedValue = advFixedValue, advFct = advFct,
-            argForClassif = argForClassif, argForModif = argForModif, verbose = verbose)
-        cellType <- modObj[1]
-        celltypeScore <- modObj[2]
+            argForClassif = argForClassif, argForModif = argForModif,
+            slot=slot, verbose = verbose)
+        cellType <- unlist(unname(modObj[1]))
+        celltypeScore <- unlist(unname(modObj[2]))
         if (verbose){
             message(cellType)
             message(celltypeScore)
         }
-        if (cellType != target) {
+        message("cellType: ", cellType)
+        message("classifTarget: ", classifTarget)
+        message("target: ", target)
+        if (cellType != classifTarget) {
             if (length(cGeneSplitValue) <= maxSplitSize &&
                 (changeType == "any" || cellType != "NA" )) {
                 if (verbose){
@@ -251,6 +293,7 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
                         changeType = changeType,
                         argForClassif = argForClassif,
                         argForModif=argForModif,
+                        slot=slot, classifTarget=classifTarget,
                         verbose = verbose)
                 }
             }
@@ -263,7 +306,8 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
 .predictionDichotMinChange <- function(exprs, genes, clusters, target,
         classifier, lResults = list(), advMethod = "perc99",
         advFixedValue = 3, advFct = NULL, maxSplitSize = 1,
-        returnFirstFound = FALSE, changeType = "any", argForClassif, argForModif,
+        returnFirstFound = FALSE, changeType = "any",
+        argForClassif, argForModif, slot=NULL,classifTarget=NULL,
         verbose) {
     if ( returnFirstFound && length(lResults) > 0){
         return (lResults)
@@ -276,8 +320,8 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
                     unname(unlist(cGeneSplit[1])), exprs,
                     genes, clusters, target, classifier, advMethod,
                     advFixedValue, advFct,
-                    maxSplitSize, changeType,returnFirstFound, argForClassif,
-                    argForModif, verbose)
+                    maxSplitSize, changeType, returnFirstFound, argForClassif,
+                    argForModif, slot, classifTarget, verbose)
     if ( returnFirstFound && length(lResults) > 0){
         return (lResults)
     } 
@@ -285,8 +329,9 @@ advSingleGene <- function(exprs, clusters, target, classifier, exclGenes = c(),
                     unname(unlist(cGeneSplit[2])), exprs,
                     genes, clusters, target, classifier,
                     advMethod, advFixedValue,
-                    advFct, maxSplitSize, changeType, returnFirstFound, argForClassif,
-                    argForModif, verbose)
+                    advFct, maxSplitSize, changeType,
+                    returnFirstFound, argForClassif,
+                    argForModif, slot, classifTarget, verbose)
     lResults
 }
 
