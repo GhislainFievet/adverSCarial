@@ -102,7 +102,7 @@ markers <- c("IL7R", "CCR7", "CD14", "LYZ", "S100A4", "MS4A1", "CD8A", "FCGR3A",
               "GNLY", "NKG7", "FCER1A", "CST3", "PPBP")
 ```
 
-## Single Gene attack
+## Single-gene attack
 
 Modify the value of a gene inside a cell cluster in order to change its classification.
 
@@ -142,7 +142,7 @@ resClassif <- MClassifier(matAdver, cellTypes, "DC")
 resClassif
 ```
 
-## Max change attack
+## Max-change attack
 
 Modify the maximum number of genes inside a cell cluster without altering its classification.
 
@@ -175,6 +175,44 @@ resClassif <- MClassifier(matMaxAdver, cellTypes, "Memory CD4 T")
 ```
 ```{r verify max change attack bis, warning = FALSE}
 resClassif
+```
+
+
+## IGD4C attack
+
+Apply the Inferred Gradient Descent for Cluster (IGD4C) attack on the "Memory CD4 T" cells cluster with parameters alpha=epsilon=1
+
+```{r IGD4C1, warning = FALSE}
+resIGD4C <- advIGD4C(as.data.frame(matPbmc), cellTypes,
+                "Memory CD4 T", MClassifier, alpha=1, epsilon=1,
+                genes=colnames(matPbmc)[ncol(matPbmc):1])
+```
+
+The algorithm test each gene and stops when the cluster prediction has switched
+to another cell type prediction. Here it stops after having modified the CCR5 gene which make the classifier switch its prediction to Naive CD4 T.
+
+```{r IGD4C2, warning = FALSE}
+tail(resIGD4C$byGeneSummary)
+```
+```{r IGD4C2_bis, warning = FALSE}
+resIGD4C$oneRowSummary
+```
+You can retrieve the modified matrix.
+
+```{r IGD4C3, warning = FALSE}
+modifiedMatrix <- resIGD4C$expr
+```
+
+And visualize the list of modified genes.
+
+```{r IGD4C4, warning = FALSE}
+resIGD4C$modGenes
+```
+
+Check the new classification of the modified matrix.
+
+```{r IGD4C5, warning = FALSE}
+MClassifier(modifiedMatrix, cellTypes, "Memory CD4 T")$prediction
 ```
 
 ```{r session info}

@@ -33,7 +33,7 @@ MClassifier <- function(exprs, clusters, target) {
         exprs <- t(counts(exprs))
     }
 
-
+    res_cell_type <- "UNDETERMINED"
     if (!is(target,"character")) {
         stop("The argument target must be character.")
     }
@@ -41,38 +41,49 @@ MClassifier <- function(exprs, clusters, target) {
         stop("The argument clusters must be a vector of character.")
     }
     if (mean(exprs[clusters == target, "LTB"]) > 7) {
-        return(c("Memory CD4 T", 1))
+        res_cell_type <- "Memory CD4 T"
     }
     if (mean(exprs[clusters == target, "CD79A"]) > 2) {
-        return(c("B", 1))
+        res_cell_type <- "B"
     }
     if (mean(exprs[clusters == target, "S100A9"]) > 10) {
-        return(c("CD14+ Mono", 1))
+        res_cell_type <- "CD14+ Mono"
     }
     if (mean(exprs[clusters == target, "GZMB"]) > 5) {
-        return(c("NK", 1))
+        res_cell_type <- "NK"
     }
     if (mean(exprs[clusters == target, "GZMK"]) > 2) {
-        return(c("CD8 T", 1))
+        res_cell_type <- "CD8 T"
     }
     if (mean(exprs[clusters == target, "LDHB"]) > 3 &&
         mean(exprs[clusters == target, "LDHB"]) < 3.3) {
-        return(c("Naive CD4 T", 1))
+        res_cell_type <- "Naive CD4 T"
     }
     if (mean(exprs[clusters == target, "CCR7"]) > 0.5) {
-        return(c("Naive CD4 T", 1))
+        res_cell_type <- "Naive CD4 T"
     }
 
     if (mean(exprs[clusters == target,"LST1"]) > 10) {
-        return (c("FCGR3A+ Mono", 1))
+        res_cell_type <- "FCGR3A+ Mono"
     }
     if (mean(exprs[clusters == target, "CD74"]) > 50) {
-        return(c("DC", 1))
+        res_cell_type <- "DC"
     }
     if (mean(exprs[clusters == target, "PF4"]) > 10) {
-        return(c("Platelet", 1))
+        res_cell_type <- "Platelet"
     }
-    c("UNDETERMINED", 1)
+
+    df_tp <- as.data.frame(matrix(0,
+        nrow=ncol(exprs), ncol=length(unique(clusters))))
+    colnames(df_tp) <- unique(clusters)
+    rownames(df_tp) <- rownames(exprs)
+    df_tp[,res_cell_type] <- 1
+    df_tp <- t(df_tp)
+
+    resClass <- list(prediction=res_cell_type, odd=1,
+                      typePredictions=df_tp,
+                      cellTypes=rep(res_cell_type, sum(clusters == target)))
+    return(resClass)
 }
 
 

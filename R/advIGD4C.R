@@ -53,7 +53,7 @@
 #' clusters_id <- c("B cell","T cell","T cell","T cell")
 #' 
 #' advIGD4C(rna_expression, clusters_id, "T cell",
-#'   MyClassifier, genes=genes, verbose=T)
+#'   MyClassifier, genes=genes, verbose=TRUE)
 #' 
 #' 
 #' @export
