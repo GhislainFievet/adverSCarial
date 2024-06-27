@@ -76,7 +76,7 @@ MClassifier <- function(exprs, clusters, target) {
     df_tp <- as.data.frame(matrix(0,
         nrow=ncol(exprs), ncol=length(unique(clusters))))
     colnames(df_tp) <- unique(clusters)
-    rownames(df_tp) <- rownames(exprs)
+    rownames(df_tp) <- colnames(exprs)
     df_tp[,res_cell_type] <- 1
     df_tp <- t(df_tp)
 
