@@ -52,12 +52,12 @@
 #' genes <- c("CD4", "CD8A")
 #' clusters_id <- c("B cell","T cell","T cell","T cell")
 #' 
-#' advIGD4C(rna_expression, clusters_id, "T cell",
+#' advCGD(rna_expression, clusters_id, "T cell",
 #'   MyClassifier, genes=genes, verbose=TRUE)
 #' 
 #' 
 #' @export
-advIGD4C <- function(expr, clusters, target, classifier, genes=NULL,
+advCGD <- function(expr, clusters, target, classifier, genes=NULL,
                      exclNewTargets=NULL, newTarget=NULL,
                      alpha=0.1, epsilon=0, slot=NULL,
 			         stopAtSwitch=TRUE, verbose=FALSE){
