@@ -12,10 +12,6 @@ abstract: >
     to the input without changing its classification.
     The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
     against adversarial attacks.
-output:
-    BiocStyle::html_document:
-        toc: true
-        toc_depth: 2
 vignette: >
   %\VignetteIndexEntry{adaptClassifier}
   %\VignetteEngine{knitr::knitr}
