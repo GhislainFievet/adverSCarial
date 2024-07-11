@@ -85,7 +85,7 @@ Visualize the results
 plotUMAP(test_4k, colour_by="celltypes")
 ```
 
-![plot of chunk chetah dimplot](figure/chetah dimplot-1.png)
+![plot of chunk chetah dimplot](figure/chetahdimplot1.png)
 
 ## Adapt the classifier
 `CHETAH` is a classifier that, when given a SingleCellExperiment object, returns a specific cell type from each cell. We need to adjust the classifier so that it can be used by *adverSCarial*.

@@ -7,6 +7,15 @@
 #' that they represent at most the variations across all possible pairs
 #' of clusters.
 #' 
+#' The getDistantCouples function is used to generate all possible pairs
+#' of clusters and order them in a way that the following pairs are as
+#' distant as possible.
+#' cell_types = c("B", "CD4 T", "NK", "CD8 T", "DC")
+#' getDistantCouples(cell_types)
+#'      'B___CD4 T', 'NK___CD8 T', 'B___DC', 'CD4 T___NK',
+#'      'CD8 T___DC', 'B___NK', 'CD4 T___CD8 T', 'NK___DC',
+#'      'B___CD8 T', 'CD4 T___DC'
+#' 
 #' @param expr A matrix of gene expression data. Rows are cells and columns
 #' are genes.
 #' @param clusters a character vector of the clusters to which the cells belong
