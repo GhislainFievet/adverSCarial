@@ -39,9 +39,9 @@ The single gene attack involves making a small modification to the input to alte
 The max change attack involves making a large modification to the input without changing its classification. This is an issue when a significant percentage of genes, sometimes as high as 99%, can be modified with the classifier still predicting the same cell type.
 
 # Jupyter Notebook examples
-[Train and attack a scAnnotatR classifier](https://github.com/GhislainFievet/adverSCarial_article/blob/master/04_train_and_attack_scAnnotatR.ipynb)
-[Train and format a random forest classifier](https://github.com/GhislainFievet/adverSCarial_article/blob/master/05_train_format_random_forest_classifier_scRF.ipynb)
-[Train and format a multi layer perceptron classifier](https://github.com/GhislainFievet/adverSCarial_article/blob/master/06_train_format_classifier_scMLP.ipynb)
+- [Train, format and CGD attack on a scAnnotatR classifier](https://github.com/GhislainFievet/adverSCarial_article/blob/master/04_train_and_attack_scAnnotatR.ipynb)
+- [Train, format and max-change attack on a random forest classifier](https://github.com/GhislainFievet/adverSCarial_article/blob/master/05_train_format_random_forest_classifier_scRF.ipynb)
+- [Train, format and single-gene attack on a multi layer perceptron classifier](https://github.com/GhislainFievet/adverSCarial_article/blob/master/06_train_format_classifier_scMLP.ipynb)
 
 
 # Installation
