@@ -41,7 +41,7 @@ library(adverSCarial)
 library(LoomExperiment)
 ```
 
-Load a pbmc raw data
+Load a pbmc raw data. You can find the dataset files in the *test* directory of the github repository.
 
 ```{r min change attack, message=FALSE, warning = FALSE}
 pbmcPath <- system.file("extdata", "pbmc_short.loom", package="adverSCarial")
