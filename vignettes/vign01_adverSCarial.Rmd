@@ -55,7 +55,7 @@ BiocManager::install('adverSCarial')
 
 # Generate an adversarial attack
 
-There are two types of adversarial attacks: `single gene attack` which modifies slightly the input in order to alter the classification, and `max change attack` which introduce the largest possible perturbations to the input while still keeping the same classification.
+There are three types of adversarial attacks: `single-gene attack` which modifies the expression of a gene in order to alter the classification, `max-change attack` which introduce the largest possible perturbations to the input while still keeping the same classification, and `Cluster Gradient Descent (CGD)` which modifies the input matrix gene by gene by following an approximated gradient until the cluster has switch its classification.
 
 Load libraries
 
