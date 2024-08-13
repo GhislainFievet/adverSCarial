@@ -1,27 +1,3 @@
----
-title: "adverSCarial, generate and analyze the vulnerability of scRNA-seq
-    classifiers to adversarial attacks"
-shorttitle: adverSCarial
-author: Ghislain FIEVET <ghislain.fievet@gmail.com>
-package: adverSCarial
-abstract: >
-    adverSCarial is an R Package designed for generating and analyzing the vulnerability of scRNA-seq
-    classifiers to adversarial attacks. The package is versatile and provides a format for integrating
-    any type of classifier. It offers functions for studying and generating two types of attacks,
-    single gene attack and max change attack. The single gene attack involves making a small modification
-    to the input to alter the classification. The max change attack involves making a large modification
-    to the input without changing its classification.
-    The package provides a comprehensive solution for evaluating the robustness of scRNA-seq classifiers
-    against adversarial attacks.
-output:
-    BiocStyle::html_document:
-        toc: true
-        toc_depth: 2
-vignette: >
-  %\VignetteIndexEntry{Vign01_adverSCarial}
-  %\VignetteEngine{knitr::knitr}
-  %\VignetteEncoding{UTF-8}
----
 
 # Introduction
 **adverSCarial is a package for generating and evaluating vulnerability to adversarial attacks on single-cell RNA sequencing classifiers.**
