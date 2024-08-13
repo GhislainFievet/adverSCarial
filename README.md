@@ -26,6 +26,7 @@ The max change attack involves making a large modification to the input without 
 if (!require("BiocManager")) {
     install.packages("BiocManager")
 }
+BiocManager::install(version='devel')
 BiocManager::install('adverSCarial')
 ```
 
