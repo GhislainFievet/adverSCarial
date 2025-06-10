@@ -32,6 +32,7 @@
 #' @param stopAtSwitch logical, set to TRUE to stop the attack when the new target
 #' set to FALSE to continue the attack until all genes are tested
 #' @param verbose logical, set to TRUE to activate verbose mode
+#' @param returnCTpredMat logical, set to TRUE to return the cell type predictions matrix
 #' @return a list containing the modified expression matrix, the list of modified genes,
 #' the summary of the attack by gene, the summary of the attack,
 #' the new cell types predictions and the original cell types predictions
@@ -60,7 +61,8 @@
 advCGD <- function(expr, clusters, target, classifier, genes=NULL,
                      exclNewTargets=NULL, newTarget=NULL,
                      alpha=0.1, epsilon=0, slot=NULL,
-			         stopAtSwitch=TRUE, verbose=FALSE){
+			         stopAtSwitch=TRUE, verbose=FALSE,
+                     returnCTpredMat=FALSE){
     # orExpr <- expr
     predictions <- classifier(expr, clusters, target)
     orTarget <- predictions$prediction
@@ -388,9 +390,18 @@ advCGD <- function(expr, clusters, target, classifier, genes=NULL,
                  dfSumUp[nrow(dfSumUp), "wholeClust_oriOdd"],
                  dfSumUp[nrow(dfSumUp), "wholeClust_targOdd"]
                  )
-                  
-    return(list(expr=modExpr, modGenes=modifiedGenes,
+    
+    if (!returnCTpredMat){
+        return(list(expr=modExpr, modGenes=modifiedGenes,
                 byGeneSummary=dfSumUp, oneRowSummary=cSummary,
                 modCellTypes=cellPredictions,
                 oriCellTypes=oriCellPredictions))
+    } else {
+        return(list(expr=modExpr, modGenes=modifiedGenes,
+                byGeneSummary=dfSumUp, oneRowSummary=cSummary,
+                modCellTypes=cellPredictions,
+                oriCellTypes=oriCellPredictions,
+                modCellTypesMat=tempPredictions$typePredictions,
+                oriCellTypesMat=predictions$typePredictions))
+    }
 }
